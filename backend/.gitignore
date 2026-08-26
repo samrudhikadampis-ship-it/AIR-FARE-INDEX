@@ -1,0 +1,10 @@
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables / credentials
+.env
