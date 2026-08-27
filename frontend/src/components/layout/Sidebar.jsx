@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   Plane,
@@ -6,14 +7,16 @@ import {
   Database,
   Settings,
   HelpCircle,
+  Fuel,
 } from 'lucide-react'
 
 const navigation = [
-  { label: 'Overview', icon: LayoutDashboard, active: true },
-  { label: 'Routes', icon: Plane },
-  { label: 'Analytics', icon: BarChart3 },
-  { label: 'Live Collection', icon: Activity },
-  { label: 'Data Explorer', icon: Database },
+  { label: 'Overview', to: '/', icon: LayoutDashboard },
+  { label: 'Route Intelligence', to: '/routes', icon: Plane },
+  { label: 'Live Collection', to: '/live-collection', icon: Activity },
+  { label: 'Index Analytics', to: '/analytics', icon: BarChart3 },
+  { label: 'Price Drivers', to: '/drivers', icon: Fuel },
+  { label: 'Data Explorer', to: '/explorer', icon: Database },
 ]
 
 export default function Sidebar() {
@@ -26,12 +29,8 @@ export default function Sidebar() {
         </div>
 
         <div className="ml-3">
-          <p className="text-sm font-semibold tracking-tight">
-            Airfare Index
-          </p>
-          <p className="text-xs text-zinc-500">
-            India
-          </p>
+          <p className="text-sm font-semibold tracking-tight">Airfare Index</p>
+          <p className="text-xs text-zinc-500">India</p>
         </div>
       </div>
 
@@ -44,19 +43,22 @@ export default function Sidebar() {
         <nav className="space-y-1">
           {navigation.map((item) => {
             const Icon = item.icon
-
             return (
-              <button
+              <NavLink
                 key={item.label}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-                  item.active
-                    ? 'bg-zinc-950 font-medium text-white'
-                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
-                }`}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
+                    isActive
+                      ? 'bg-zinc-950 font-medium text-white'
+                      : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                  }`
+                }
               >
                 <Icon size={17} strokeWidth={1.8} />
                 {item.label}
-              </button>
+              </NavLink>
             )
           })}
         </nav>
@@ -83,14 +85,9 @@ export default function Sidebar() {
         <div className="rounded-xl bg-zinc-50 p-4">
           <div className="mb-2 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-medium text-zinc-700">
-              Data collection active
-            </span>
+            <span className="text-xs font-medium text-zinc-700">Data collection active</span>
           </div>
-
-          <p className="text-xs leading-relaxed text-zinc-500">
-            Last updated 2 minutes ago
-          </p>
+          <p className="text-xs leading-relaxed text-zinc-500">Last updated 2 minutes ago</p>
         </div>
       </div>
     </aside>
