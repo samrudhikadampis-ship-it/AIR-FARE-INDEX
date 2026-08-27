@@ -6,18 +6,42 @@ import { useDataExplorer } from '../hooks/useDataExplorer'
 
 const COLUMNS = [
   { key: 'id', label: 'Quote ID' },
-  { key: 'route', label: 'Route' },
-  { key: 'airline', label: 'Airline' },
-  { key: 'fare', label: 'Fare' },
-  { key: 'source', label: 'Source' },
-  { key: 'bookingWindowDays', label: 'Booking Window' },
-  { key: 'collectedAt', label: 'Collected At' },
+  { key: 'source', label: 'Origin' },
+  { key: 'destination', label: 'Destination' },
+  { key: 'departure_time', label: 'Departure' },
+  { key: 'arrival_time', label: 'Arrival' },
+  { key: 'duration', label: 'Duration' },
+  { key: 'price_inr', label: 'Price' },
 ]
+
+function formatPrice(value) {
+  const number = Number(value)
+
+  if (!Number.isNaN(number)) {
+    return `₹${number.toLocaleString('en-IN')}`
+  }
+
+  return value || '—'
+}
 
 export default function DataExplorer() {
   const {
-    loading, filtered, search, setSearch, airlineFilter, setAirlineFilter,
-    airlineOptions, sortKey, sortDir, toggleSort, total,
+    loading,
+    error,
+    filtered,
+    search,
+    setSearch,
+    originFilter,
+    setOriginFilter,
+    destFilter,
+    setDestFilter,
+    originOptions,
+    destOptions,
+    sortKey,
+    sortDir,
+    toggleSort,
+    total,
+    reload,
   } = useDataExplorer()
 
   return (
@@ -25,11 +49,13 @@ export default function DataExplorer() {
       <PageHeading
         eyebrow="Data Explorer"
         title="Raw Quote Records"
-        description="Browse, search, and filter individual fare quotes collected from every source."
+        description="Browse, search, and filter individual airfare quotes collected from every source."
         actions={
-          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50">
-            <Download size={15} />
-            Export CSV
+          <button
+            onClick={reload}
+            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50"
+          >
+            Refresh
           </button>
         }
       />
@@ -38,23 +64,40 @@ export default function DataExplorer() {
         title="Quotes"
         subtitle={`Showing ${filtered.length} of ${total} records`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
-              value={airlineFilter}
-              onChange={(e) => setAirlineFilter(e.target.value)}
+              value={originFilter}
+              onChange={(e) => setOriginFilter(e.target.value)}
               className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
             >
-              {airlineOptions.map((a) => (
-                <option key={a} value={a}>{a}</option>
+              {originOptions.map((origin) => (
+                <option key={origin} value={origin}>
+                  {origin === 'All' ? 'All Origins' : origin}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={destFilter}
+              onChange={(e) => setDestFilter(e.target.value)}
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+            >
+              {destOptions.map((destination) => (
+                <option key={destination} value={destination}>
+                  {destination === 'All'
+                    ? 'All Destinations'
+                    : destination}
+                </option>
               ))}
             </select>
 
             <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2">
               <Search size={15} className="text-zinc-400" />
+
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search route, airline, source..."
+                placeholder="Search quotes..."
                 className="w-48 bg-transparent text-sm outline-none placeholder:text-zinc-400"
               />
             </div>
@@ -63,42 +106,104 @@ export default function DataExplorer() {
       >
         {loading ? (
           <LoadingBlock height="h-64" />
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <p className="text-sm font-medium text-zinc-900">
+              Unable to load quote data
+            </p>
+
+            <p className="mt-1 max-w-md text-sm text-zinc-500">
+              The data service may not be running yet. The Explorer is ready
+              to connect once the backend is available.
+            </p>
+
+            <button
+              onClick={reload}
+              className="mt-4 rounded-lg bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            >
+              Try Again
+            </button>
+          </div>
         ) : (
           <div className="max-h-[600px] overflow-auto">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[950px] text-sm">
               <thead className="sticky top-0 bg-white text-xs text-zinc-500">
                 <tr>
-                  {COLUMNS.map((col) => (
-                    <th key={col.key} className="px-6 py-3 text-left font-medium">
+                  {COLUMNS.map((column) => (
+                    <th
+                      key={column.key}
+                      className="px-6 py-3 text-left font-medium"
+                    >
                       <button
-                        onClick={() => toggleSort(col.key)}
+                        onClick={() => toggleSort(column.key)}
                         className="flex items-center gap-1 hover:text-zinc-900"
                       >
-                        {col.label}
-                        <ArrowUpDown size={12} className={sortKey === col.key ? 'text-zinc-900' : 'text-zinc-300'} />
+                        {column.label}
+
+                        <ArrowUpDown
+                          size={12}
+                          className={
+                            sortKey === column.key
+                              ? 'text-zinc-900'
+                              : 'text-zinc-300'
+                          }
+                        />
                       </button>
                     </th>
                   ))}
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-zinc-100">
-                {filtered.map((r) => (
-                  <tr key={r.id} className="hover:bg-zinc-50">
-                    <td className="px-6 py-3 font-mono text-xs text-zinc-500">{r.id}</td>
-                    <td className="px-6 py-3 font-medium text-zinc-950">{r.route}</td>
-                    <td className="px-6 py-3 text-zinc-700">{r.airline}</td>
-                    <td className="px-6 py-3 text-zinc-700">₹{r.fare.toLocaleString('en-IN')}</td>
-                    <td className="px-6 py-3 text-zinc-700">{r.source}</td>
-                    <td className="px-6 py-3 text-zinc-700">T+{r.bookingWindowDays}</td>
-                    <td className="px-6 py-3 text-zinc-500">
-                      {new Date(r.collectedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                {filtered.map((record) => (
+                  <tr
+                    key={record.id}
+                    className="hover:bg-zinc-50"
+                  >
+                    <td className="px-6 py-3 font-mono text-xs text-zinc-500">
+                      {record.id || '—'}
+                    </td>
+
+                    <td className="px-6 py-3 font-medium text-zinc-950">
+                      {record.source || '—'}
+                    </td>
+
+                    <td className="px-6 py-3 font-medium text-zinc-950">
+                      {record.destination || '—'}
+                    </td>
+
+                    <td className="px-6 py-3 text-zinc-700">
+                      {record.departure_time || '—'}
+                    </td>
+
+                    <td className="px-6 py-3 text-zinc-700">
+                      {record.arrival_time || '—'}
+                    </td>
+
+                    <td className="px-6 py-3 text-zinc-700">
+                      {record.duration || '—'}
+                    </td>
+
+                    <td className="px-6 py-3 font-medium text-zinc-900">
+                      {formatPrice(record.price_inr ?? record.price)}
                     </td>
                   </tr>
                 ))}
+
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={COLUMNS.length} className="px-6 py-12 text-center text-sm text-zinc-400">
-                      No quotes match your filters.
+                    <td
+                      colSpan={COLUMNS.length}
+                      className="px-6 py-16 text-center"
+                    >
+                      <p className="text-sm font-medium text-zinc-700">
+                        No quote records available
+                      </p>
+
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Quote data will appear here once the collection
+                        service is connected.
+                      </p>
                     </td>
                   </tr>
                 )}

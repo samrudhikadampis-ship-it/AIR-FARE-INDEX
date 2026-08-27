@@ -1,18 +1,15 @@
+// GET /api/drivers/fuel  GET /api/drivers/festivals  GET /api/drivers/demand
+import { apiGet } from '../http'
 import { buildFuelTrend, FESTIVAL_EVENTS, DEMAND_DRIVERS } from '../mock/drivers'
 
-const delay = (ms = 250) => new Promise((res) => setTimeout(res, ms))
-
 export async function fetchFuelTrend(months = 12) {
-  await delay()
-  return buildFuelTrend(months)
+  return apiGet(`/api/drivers/fuel?months=${months}`, () => buildFuelTrend(months))
 }
 
 export async function fetchFestivalEvents() {
-  await delay()
-  return FESTIVAL_EVENTS
+  return apiGet('/api/drivers/festivals', () => FESTIVAL_EVENTS)
 }
 
 export async function fetchDemandDrivers() {
-  await delay()
-  return DEMAND_DRIVERS
+  return apiGet('/api/drivers/demand', () => DEMAND_DRIVERS)
 }

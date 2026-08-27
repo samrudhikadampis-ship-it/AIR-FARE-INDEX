@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
 }
@@ -15,4 +17,9 @@ body {
     "Segoe UI",
     sans-serif;
   background: #fafafa;
+}
+
+html.dark body {
+  background: #09090b;
+  color: #fafafa;
 }

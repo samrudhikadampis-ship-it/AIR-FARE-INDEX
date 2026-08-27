@@ -1,18 +1,15 @@
+// GET /api/collection/sources  GET /api/collection/timeline  GET /api/collection/summary
+import { apiGet } from '../http'
 import { SOURCES, buildCollectionTimeline, COLLECTION_SUMMARY } from '../mock/collection'
 
-const delay = (ms = 250) => new Promise((res) => setTimeout(res, ms))
-
 export async function fetchSources() {
-  await delay()
-  return SOURCES
+  return apiGet('/api/collection/sources', () => SOURCES)
 }
 
 export async function fetchCollectionTimeline(hours = 24) {
-  await delay()
-  return buildCollectionTimeline(hours)
+  return apiGet(`/api/collection/timeline?hours=${hours}`, () => buildCollectionTimeline(hours))
 }
 
 export async function fetchCollectionSummary() {
-  await delay()
-  return COLLECTION_SUMMARY
+  return apiGet('/api/collection/summary', () => COLLECTION_SUMMARY)
 }

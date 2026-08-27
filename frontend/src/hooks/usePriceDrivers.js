@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { fetchFuelTrend, fetchFestivalEvents, fetchDemandDrivers } from '../services/api/driversApi'
 
 export function usePriceDrivers() {
@@ -6,14 +6,27 @@ export function usePriceDrivers() {
   const [festivals, setFestivals] = useState([])
   const [demandDrivers, setDemandDrivers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    Promise.all([fetchFuelTrend(), fetchFestivalEvents(), fetchDemandDrivers()]).then(
-      ([fuel, fest, demand]) => {
-        setFuelTrend(fuel); setFestivals(fest); setDemandDrivers(demand); setLoading(false)
-      }
-    )
+  const reload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    Promise.all([fetchFuelTrend(), fetchFestivalEvents(), fetchDemandDrivers()])
+      .then(([fuel, fest, demand]) => {
+        setFuelTrend(fuel)
+        setFestivals(fest)
+        setDemandDrivers(demand)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load price drivers')
+        setLoading(false)
+      })
   }, [])
 
-  return { fuelTrend, festivals, demandDrivers, loading }
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  return { fuelTrend, festivals, demandDrivers, loading, error, reload }
 }

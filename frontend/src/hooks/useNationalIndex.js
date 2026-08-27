@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   fetchNationalSnapshot,
   fetchNationalTrend,
@@ -9,50 +9,99 @@ import {
 export function useNationalSnapshot() {
   const [snapshot, setSnapshot] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    let alive = true
-    fetchNationalSnapshot().then((data) => {
-      if (alive) { setSnapshot(data); setLoading(false) }
-    })
-    return () => { alive = false }
+  const reload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    fetchNationalSnapshot()
+      .then((data) => {
+        setSnapshot(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load index')
+        setLoading(false)
+      })
   }, [])
 
-  return { snapshot, loading }
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  return { snapshot, loading, error, reload }
 }
 
 export function useNationalTrend(initialRangeDays = 30) {
   const [rangeDays, setRangeDays] = useState(initialRangeDays)
   const [trend, setTrend] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const reload = useCallback((days) => {
+    const next = days ?? rangeDays
     setLoading(true)
-    fetchNationalTrend(days ?? rangeDays).then((data) => {
-      setTrend(data)
-      setLoading(false)
-    })
+    setError(null)
+    fetchNationalTrend(next)
+      .then((data) => {
+        setTrend(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load trend')
+        setLoading(false)
+      })
   }, [rangeDays])
 
-  useEffect(() => { reload(rangeDays) }, [rangeDays]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    reload(rangeDays)
+  }, [rangeDays, reload])
 
-  return { trend, loading, rangeDays, setRangeDays }
+  return { trend, loading, error, rangeDays, setRangeDays, reload }
 }
 
 export function useBookingWindows() {
   const [windows, setWindows] = useState([])
   const [loading, setLoading] = useState(true)
-  useEffect(() => {
-    fetchBookingWindows().then((data) => { setWindows(data); setLoading(false) })
+  const [error, setError] = useState(null)
+  const reload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    fetchBookingWindows()
+      .then((data) => {
+        setWindows(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load booking windows')
+        setLoading(false)
+      })
   }, [])
-  return { windows, loading }
+  useEffect(() => {
+    reload()
+  }, [reload])
+  return { windows, loading, error, reload }
 }
 
 export function useDayOfWeekTrends() {
   const [days, setDays] = useState([])
   const [loading, setLoading] = useState(true)
-  useEffect(() => {
-    fetchDayOfWeekTrends().then((data) => { setDays(data); setLoading(false) })
+  const [error, setError] = useState(null)
+  const reload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    fetchDayOfWeekTrends()
+      .then((data) => {
+        setDays(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load day trends')
+        setLoading(false)
+      })
   }, [])
-  return { days, loading }
+  useEffect(() => {
+    reload()
+  }, [reload])
+  return { days, loading, error, reload }
 }

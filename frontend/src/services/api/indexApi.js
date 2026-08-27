@@ -1,31 +1,23 @@
-// API layer for the national airfare index.
-// Swap the body of each function for a real fetch('/api/...') call later --
-// hooks/pages never need to change, only this file.
-import {
-  buildNationalTrend,
-  NATIONAL_INDEX_SNAPSHOT,
-  BOOKING_WINDOWS,
-  DAY_OF_WEEK_TRENDS,
-} from '../mock/nationalIndex'
-
-const delay = (ms = 250) => new Promise((res) => setTimeout(res, ms))
+// GET /api/index/snapshot  GET /api/index/trend?days=  GET /api/index/booking-windows  GET /api/index/day-of-week
+import { apiGet } from '../http'
+import { getScrapeQuotes } from '../mock/quotes'
+import { buildNationalSnapshot, buildNationalTrend } from '../mock/aggregations'
+import { BOOKING_WINDOWS, DAY_OF_WEEK_TRENDS } from '../mock/nationalIndex'
 
 export async function fetchNationalSnapshot() {
-  await delay()
-  return NATIONAL_INDEX_SNAPSHOT
+  return apiGet('/api/index/snapshot', () => buildNationalSnapshot(getScrapeQuotes()))
 }
 
 export async function fetchNationalTrend(rangeDays = 30) {
-  await delay()
-  return buildNationalTrend(rangeDays)
+  return apiGet(`/api/index/trend?days=${rangeDays}`, () =>
+    buildNationalTrend(getScrapeQuotes(), rangeDays)
+  )
 }
 
 export async function fetchBookingWindows() {
-  await delay()
-  return BOOKING_WINDOWS
+  return apiGet('/api/index/booking-windows', () => BOOKING_WINDOWS)
 }
 
 export async function fetchDayOfWeekTrends() {
-  await delay()
-  return DAY_OF_WEEK_TRENDS
+  return apiGet('/api/index/day-of-week', () => DAY_OF_WEEK_TRENDS)
 }

@@ -1,52 +1,186 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchQuoteRecords } from '../services/api/explorerApi'
 
-export function useDataExplorer() {
+function normalizeRecord(record, index) {
+  const priceString = String(record?.price ?? '')
+  const priceNumber = Number(
+    priceString.replace(/[^\d.]/g, '')
+  )
+
+  return {
+    ...record,
+    id: record?.id ?? `quote-${index + 1}`,
+    source: record?.source ?? '',
+    destination: record?.destination ?? '',
+    departure_time: record?.departure_time ?? '',
+    arrival_time: record?.arrival_time ?? '',
+    duration: record?.duration ?? '',
+    price: record?.price ?? '',
+    price_inr: Number.isNaN(priceNumber) ? 0 : priceNumber,
+  }
+}
+
+export function useDataExplorer(initialSearch = '') {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [airlineFilter, setAirlineFilter] = useState('All')
-  const [sortKey, setSortKey] = useState('collectedAt')
-  const [sortDir, setSortDir] = useState('desc')
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    fetchQuoteRecords().then((data) => { setRecords(data); setLoading(false) })
+  const [search, setSearch] = useState(initialSearch)
+
+  const [originFilter, setOriginFilter] = useState('All')
+  const [destFilter, setDestFilter] = useState('All')
+
+  const [sortKey, setSortKey] = useState('price_inr')
+  const [sortDir, setSortDir] = useState('asc')
+
+  const reload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+
+    fetchQuoteRecords()
+      .then((data) => {
+        const safeData = Array.isArray(data) ? data : []
+
+        setRecords(
+          safeData.map((record, index) =>
+            normalizeRecord(record, index)
+          )
+        )
+
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('Failed to load quote records:', err)
+
+        setRecords([])
+        setError(err.message || 'Failed to load quotes')
+        setLoading(false)
+      })
   }, [])
 
-  const airlineOptions = useMemo(
-    () => ['All', ...new Set(records.map((r) => r.airline))],
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  useEffect(() => {
+    setSearch(initialSearch)
+  }, [initialSearch])
+
+  const originOptions = useMemo(
+    () => [
+      'All',
+      ...[
+        ...new Set(
+          records
+            .map((record) => record.source)
+            .filter(Boolean)
+        ),
+      ].sort(),
+    ],
+    [records]
+  )
+
+  const destOptions = useMemo(
+    () => [
+      'All',
+      ...[
+        ...new Set(
+          records
+            .map((record) => record.destination)
+            .filter(Boolean)
+        ),
+      ].sort(),
+    ],
     [records]
   )
 
   const filtered = useMemo(() => {
     let rows = records
-    if (airlineFilter !== 'All') rows = rows.filter((r) => r.airline === airlineFilter)
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
+
+    if (originFilter !== 'All') {
       rows = rows.filter(
-        (r) =>
-          r.route.toLowerCase().includes(q) ||
-          r.airline.toLowerCase().includes(q) ||
-          r.source.toLowerCase().includes(q) ||
-          r.id.toLowerCase().includes(q)
+        (record) => record.source === originFilter
       )
     }
-    const sorted = [...rows].sort((a, b) => {
-      const va = a[sortKey], vb = b[sortKey]
-      if (va < vb) return sortDir === 'asc' ? -1 : 1
-      if (va > vb) return sortDir === 'asc' ? 1 : -1
+
+    if (destFilter !== 'All') {
+      rows = rows.filter(
+        (record) => record.destination === destFilter
+      )
+    }
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+
+      rows = rows.filter((record) => {
+        return (
+          String(record.source).toLowerCase().includes(q) ||
+          String(record.destination).toLowerCase().includes(q) ||
+          String(record.departure_time).toLowerCase().includes(q) ||
+          String(record.arrival_time).toLowerCase().includes(q) ||
+          String(record.price).toLowerCase().includes(q) ||
+          String(record.id).toLowerCase().includes(q)
+        )
+      })
+    }
+
+    return [...rows].sort((a, b) => {
+      const va = a[sortKey]
+      const vb = b[sortKey]
+
+      if (va < vb) {
+        return sortDir === 'asc' ? -1 : 1
+      }
+
+      if (va > vb) {
+        return sortDir === 'asc' ? 1 : -1
+      }
+
       return 0
     })
-    return sorted
-  }, [records, search, airlineFilter, sortKey, sortDir])
+  }, [
+    records,
+    search,
+    originFilter,
+    destFilter,
+    sortKey,
+    sortDir,
+  ])
 
   function toggleSort(key) {
-    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortKey(key); setSortDir('asc') }
+    if (key === sortKey) {
+      setSortDir((direction) =>
+        direction === 'asc' ? 'desc' : 'asc'
+      )
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
   }
 
   return {
-    loading, filtered, search, setSearch, airlineFilter, setAirlineFilter,
-    airlineOptions, sortKey, sortDir, toggleSort, total: records.length,
+    loading,
+    error,
+    reload,
+
+    filtered,
+
+    search,
+    setSearch,
+
+    originFilter,
+    setOriginFilter,
+
+    destFilter,
+    setDestFilter,
+
+    originOptions,
+    destOptions,
+
+    sortKey,
+    sortDir,
+    toggleSort,
+
+    total: records.length,
   }
 }

@@ -1,10 +1,9 @@
-import { buildQuoteRecords } from '../mock/explorer'
-
-const delay = (ms = 250) => new Promise((res) => setTimeout(res, ms))
-let cache = null
+// GET /api/quotes
+import { apiGet } from '../http'
+import { getScrapeQuotes } from '../mock/quotes'
+import { normalizeQuote } from '../quotes/normalize'
 
 export async function fetchQuoteRecords() {
-  await delay()
-  if (!cache) cache = buildQuoteRecords(80)
-  return cache
+  const data = await apiGet('/api/quotes', () => getScrapeQuotes())
+  return (Array.isArray(data) ? data : []).map((row, i) => normalizeQuote(row, i))
 }
