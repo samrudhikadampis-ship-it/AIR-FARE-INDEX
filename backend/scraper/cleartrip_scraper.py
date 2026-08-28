@@ -129,7 +129,7 @@ async def main():
     current_date_str = today.strftime("%Y-%m-%d")
     
     async with async_playwright() as p:
-        browser = await p.chromium.launch(channel="chrome", headless=True)
+        browser = await p.chromium.launch(headless=True)
         tasks = []
         for from_code, to_code in routes:
             for offset in advance_windows:
