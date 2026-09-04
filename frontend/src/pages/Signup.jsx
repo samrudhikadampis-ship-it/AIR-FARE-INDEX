@@ -1,8 +1,28 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Plane } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import Button from '../components/common/Button'
 
 export default function Signup() {
+  const { signup, error, setError } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const from = location.state?.from || '/'
+
+  function onSubmit(e) {
+    e.preventDefault()
+    setError('')
+    if (!name.trim() || !email.trim() || !password) {
+      setError('Please fill in all fields.')
+      return
+    }
+    if (signup({ name, email, password })) navigate(from, { replace: true })
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -25,11 +45,14 @@ export default function Signup() {
           Create an account to access the Airfare Index dashboard.
         </p>
 
-        <form className="mt-6 space-y-4">
+        <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <label className="block text-sm">
             Name
             <input
               type="text"
+              required
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError('') }}
               className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
             />
           </label>
@@ -38,6 +61,9 @@ export default function Signup() {
             Email
             <input
               type="email"
+              required
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError('') }}
               className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
             />
           </label>
@@ -46,9 +72,14 @@ export default function Signup() {
             Password
             <input
               type="password"
+              required
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError('') }}
               className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
             />
           </label>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
 
           <Button type="submit" variant="primary" className="w-full">
             Create account
