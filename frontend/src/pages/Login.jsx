@@ -41,7 +41,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError('') }}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
           </label>
           <label className="block text-sm">
@@ -51,7 +51,7 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
           </label>
           {error && <p className="text-sm text-red-500">{error}</p>}

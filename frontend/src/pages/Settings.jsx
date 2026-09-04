@@ -14,7 +14,7 @@ export default function Settings() {
       </div>
 
       <div className="max-w-3xl space-y-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-6">
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex items-center gap-3">
             <SettingsIcon size={20} />
             <div>
@@ -48,7 +48,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-6">
+        <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex items-center gap-3">
             <Database size={20} />
             <div>
@@ -61,7 +61,7 @@ export default function Settings() {
 
           <div className="mt-6">
             <p className="text-sm text-zinc-500">Collection status</p>
-            <p className="mt-1 text-sm font-medium text-emerald-600">
+            <p className="mt-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
               ● Active
             </p>
           </div>

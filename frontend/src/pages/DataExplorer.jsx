@@ -53,7 +53,7 @@ export default function DataExplorer() {
         actions={
           <button
             onClick={reload}
-            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50"
+            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
           >
             Refresh
           </button>
@@ -68,7 +68,7 @@ export default function DataExplorer() {
             <select
               value={originFilter}
               onChange={(e) => setOriginFilter(e.target.value)}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             >
               {originOptions.map((origin) => (
                 <option key={origin} value={origin}>
@@ -80,7 +80,7 @@ export default function DataExplorer() {
             <select
               value={destFilter}
               onChange={(e) => setDestFilter(e.target.value)}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             >
               {destOptions.map((destination) => (
                 <option key={destination} value={destination}>
@@ -91,14 +91,14 @@ export default function DataExplorer() {
               ))}
             </select>
 
-            <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <Search size={15} className="text-zinc-400" />
 
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search quotes..."
-                className="w-48 bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                className="w-48 bg-transparent text-sm outline-none placeholder:text-zinc-400 dark:text-zinc-100"
               />
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function DataExplorer() {
           <LoadingBlock height="h-64" />
         ) : error ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-            <p className="text-sm font-medium text-zinc-900">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
               Unable to load quote data
             </p>
 
@@ -119,7 +119,7 @@ export default function DataExplorer() {
 
             <button
               onClick={reload}
-              className="mt-4 rounded-lg bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+              className="mt-4 rounded-lg bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
             >
               Try Again
             </button>
@@ -127,7 +127,7 @@ export default function DataExplorer() {
         ) : (
           <div className="max-h-[600px] overflow-auto">
             <table className="w-full min-w-[950px] text-sm">
-              <thead className="sticky top-0 bg-white text-xs text-zinc-500">
+              <thead className="sticky top-0 bg-white text-xs text-zinc-500 dark:bg-zinc-900">
                 <tr>
                   {COLUMNS.map((column) => (
                     <th
@@ -136,7 +136,7 @@ export default function DataExplorer() {
                     >
                       <button
                         onClick={() => toggleSort(column.key)}
-                        className="flex items-center gap-1 hover:text-zinc-900"
+                        className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-50"
                       >
                         {column.label}
 
@@ -144,8 +144,8 @@ export default function DataExplorer() {
                           size={12}
                           className={
                             sortKey === column.key
-                              ? 'text-zinc-900'
-                              : 'text-zinc-300'
+                              ? 'text-zinc-900 dark:text-zinc-50'
+                              : 'text-zinc-300 dark:text-zinc-600'
                           }
                         />
                       </button>
@@ -154,37 +154,37 @@ export default function DataExplorer() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                 {filtered.map((record) => (
                   <tr
                     key={record.id}
-                    className="hover:bg-zinc-50"
+                    className="hover:bg-zinc-50 dark:hover:bg-zinc-800/70"
                   >
                     <td className="px-6 py-3 font-mono text-xs text-zinc-500">
                       {record.id || '—'}
                     </td>
 
-                    <td className="px-6 py-3 font-medium text-zinc-950">
+                    <td className="px-6 py-3 font-medium text-zinc-950 dark:text-zinc-50">
                       {record.source || '—'}
                     </td>
 
-                    <td className="px-6 py-3 font-medium text-zinc-950">
+                    <td className="px-6 py-3 font-medium text-zinc-950 dark:text-zinc-50">
                       {record.destination || '—'}
                     </td>
 
-                    <td className="px-6 py-3 text-zinc-700">
+                    <td className="px-6 py-3 text-zinc-700 dark:text-zinc-300">
                       {record.departure_time || '—'}
                     </td>
 
-                    <td className="px-6 py-3 text-zinc-700">
+                    <td className="px-6 py-3 text-zinc-700 dark:text-zinc-300">
                       {record.arrival_time || '—'}
                     </td>
 
-                    <td className="px-6 py-3 text-zinc-700">
+                    <td className="px-6 py-3 text-zinc-700 dark:text-zinc-300">
                       {record.duration || '—'}
                     </td>
 
-                    <td className="px-6 py-3 font-medium text-zinc-900">
+                    <td className="px-6 py-3 font-medium text-zinc-900 dark:text-zinc-50">
                       {formatPrice(record.price_inr ?? record.price)}
                     </td>
                   </tr>
@@ -196,7 +196,7 @@ export default function DataExplorer() {
                       colSpan={COLUMNS.length}
                       className="px-6 py-16 text-center"
                     >
-                      <p className="text-sm font-medium text-zinc-700">
+                      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                         No quote records available
                       </p>
 

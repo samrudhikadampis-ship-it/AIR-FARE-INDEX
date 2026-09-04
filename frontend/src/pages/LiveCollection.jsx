@@ -6,8 +6,12 @@ import StatCard from '../components/common/StatCard'
 import StatusBadge from '../components/common/StatusBadge'
 import LoadingBlock from '../components/common/LoadingBlock'
 import { useCollectionStatus } from '../hooks/useCollectionStatus'
+import { useTheme } from '../context/ThemeContext'
+import { getChartTheme, tickStyle } from '../theme/chartTheme'
 
 export default function LiveCollection() {
+  const { isDark } = useTheme()
+  const chart = getChartTheme(isDark)
   const { sources, timeline, summary, loading } = useCollectionStatus()
 
   return (
@@ -17,7 +21,7 @@ export default function LiveCollection() {
         title="Scraper & Data Source Health"
         description="Real-time status of every airline and OTA source feeding the index."
         actions={
-          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50">
+          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
             <RefreshCw size={15} />
             Refresh
           </button>
@@ -41,15 +45,15 @@ export default function LiveCollection() {
                 <AreaChart data={timeline} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="quotesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#18181b" stopOpacity={0.18} />
-                      <stop offset="100%" stopColor="#18181b" stopOpacity={0} />
+                      <stop offset="0%" stopColor={chart.areaFill} stopOpacity={0.18} />
+                      <stop offset="100%" stopColor={chart.areaFill} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e4e4e7" />
-                  <XAxis dataKey="time" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#71717a' }} interval={3} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#71717a' }} />
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: '#e4e4e7' }} />
-                  <Area type="monotone" dataKey="quotes" stroke="#18181b" strokeWidth={2} fill="url(#quotesGradient)" />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={chart.grid} />
+                  <XAxis dataKey="time" tickLine={false} axisLine={false} tick={tickStyle(isDark, 11)} interval={3} />
+                  <YAxis tickLine={false} axisLine={false} tick={tickStyle(isDark, 11)} />
+                  <Tooltip contentStyle={chart.tooltip} />
+                  <Area type="monotone" dataKey="quotes" stroke={chart.line} strokeWidth={2} fill="url(#quotesGradient)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -57,7 +61,7 @@ export default function LiveCollection() {
         </CardShell>
 
         <CardShell title="Source Status" subtitle={`${sources.filter((s) => s.status === 'healthy').length} of ${sources.length} healthy`}>
-          <div className="max-h-[320px] divide-y divide-zinc-100 overflow-y-auto">
+          <div className="max-h-[320px] divide-y divide-zinc-100 overflow-y-auto dark:divide-zinc-800">
             {loading ? (
               <LoadingBlock />
             ) : (
@@ -91,15 +95,15 @@ export default function LiveCollection() {
                   <th className="px-4 py-3 text-left font-medium">Quotes (24h)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                 {sources.map((s) => (
-                  <tr key={s.id} className="hover:bg-zinc-50">
-                    <td className="px-6 py-3.5 font-medium text-zinc-950">{s.name}</td>
-                    <td className="px-4 py-3.5 text-zinc-600">{s.type}</td>
+                  <tr key={s.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/70">
+                    <td className="px-6 py-3.5 font-medium text-zinc-950 dark:text-zinc-50">{s.name}</td>
+                    <td className="px-4 py-3.5 text-zinc-600 dark:text-zinc-400">{s.type}</td>
                     <td className="px-4 py-3.5"><StatusBadge status={s.status} /></td>
-                    <td className="px-4 py-3.5 text-zinc-700">{s.successRate}%</td>
-                    <td className="px-4 py-3.5 text-zinc-700">{s.avgLatencyMs}ms</td>
-                    <td className="px-4 py-3.5 text-zinc-700">{s.quotesLast24h.toLocaleString('en-IN')}</td>
+                    <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">{s.successRate}%</td>
+                    <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">{s.avgLatencyMs}ms</td>
+                    <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">{s.quotesLast24h.toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>

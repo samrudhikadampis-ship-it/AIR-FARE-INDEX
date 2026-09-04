@@ -9,7 +9,10 @@
       try {
         var m = localStorage.getItem('afi.theme') || 'light';
         var dark = m === 'dark' || (m === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (dark) document.documentElement.classList.add('dark');
+        if (dark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = 'dark';
+        }
       } catch (e) {}
     </script>
   </head>

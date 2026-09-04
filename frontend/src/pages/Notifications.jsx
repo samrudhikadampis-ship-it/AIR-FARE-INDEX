@@ -34,7 +34,7 @@ export default function Notifications() {
         </p>
       </div>
 
-      <div className="max-w-3xl overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="max-w-3xl overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         {notifications.map((notification, index) => {
           const Icon = notification.icon
 
@@ -43,12 +43,12 @@ export default function Notifications() {
               key={notification.title}
               className={`flex gap-4 p-5 ${
                 index !== notifications.length - 1
-                  ? 'border-b border-zinc-200'
+                  ? 'border-b border-zinc-200 dark:border-zinc-800'
                   : ''
               }`}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
-                <Icon size={18} className="text-zinc-700" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                <Icon size={18} className="text-zinc-700 dark:text-zinc-300" />
               </div>
 
               <div className="min-w-0">

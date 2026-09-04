@@ -10,20 +10,22 @@ function getSystemDark() {
 function applyTheme(mode) {
   const dark = mode === 'dark' || (mode === 'system' && getSystemDark())
   document.documentElement.classList.toggle('dark', dark)
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
 }
 
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(() => localStorage.getItem(STORAGE.theme) || 'light')
+  const [systemDark, setSystemDark] = useState(getSystemDark)
 
   useEffect(() => {
     applyTheme(mode)
     localStorage.setItem(STORAGE.theme, mode)
-  }, [mode])
+  }, [mode, systemDark])
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const onChange = () => {
-      if (localStorage.getItem(STORAGE.theme) === 'system') applyTheme('system')
+      setSystemDark(mq.matches)
     }
     mq.addEventListener?.('change', onChange)
     return () => mq.removeEventListener?.('change', onChange)
@@ -33,7 +35,7 @@ export function ThemeProvider({ children }) {
     setMode((m) => (m === 'dark' ? 'light' : 'dark'))
   }
 
-  const isDark = mode === 'dark' || (mode === 'system' && getSystemDark())
+  const isDark = mode === 'dark' || (mode === 'system' && systemDark)
 
   return (
     <ThemeContext.Provider value={{ mode, setMode, toggle, isDark }}>

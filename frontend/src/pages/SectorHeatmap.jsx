@@ -99,7 +99,7 @@ export default function SectorHeatmap() {
         subtitle={`${airports.length} × ${airports.length} origin–destination grid · ${period.toUpperCase()} window`}
       >
         <SectorHeatmapGrid airports={airports} lookup={lookup} metric={metric} isDark={isDark} />
-        <HeatmapLegend metric={metric} />
+        <HeatmapLegend metric={metric} isDark={isDark} />
       </CardShell>
     </div>
   )

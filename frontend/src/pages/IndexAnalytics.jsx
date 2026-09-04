@@ -3,8 +3,12 @@ import PageHeading from '../components/common/PageHeading'
 import CardShell from '../components/common/CardShell'
 import LoadingBlock from '../components/common/LoadingBlock'
 import { useBookingWindows, useDayOfWeekTrends } from '../hooks/useNationalIndex'
+import { useTheme } from '../context/ThemeContext'
+import { getChartTheme, tickStyle } from '../theme/chartTheme'
 
 export default function IndexAnalytics() {
+  const { isDark } = useTheme()
+  const chart = getChartTheme(isDark)
   const { windows, loading: windowsLoading } = useBookingWindows()
   const { days, loading: daysLoading } = useDayOfWeekTrends()
 
@@ -26,23 +30,23 @@ export default function IndexAnalytics() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={windows} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e4e4e7" />
-                  <XAxis dataKey="window" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#71717a' }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#71717a' }} />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={chart.grid} />
+                  <XAxis dataKey="window" tickLine={false} axisLine={false} tick={tickStyle(isDark)} />
+                  <YAxis tickLine={false} axisLine={false} tick={tickStyle(isDark)} />
                   <Tooltip
-                    contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: '#e4e4e7' }}
+                    contentStyle={chart.tooltip}
                     formatter={(v, name) => [name === 'indexValue' ? v : `₹${v.toLocaleString('en-IN')}`, name === 'indexValue' ? 'Index' : 'Avg. Fare']}
                   />
                   <Bar dataKey="indexValue" radius={[6, 6, 0, 0]}>
                     {windows.map((w, i) => (
-                      <Cell key={w.window} fill={i === 0 ? '#dc2626' : '#18181b'} />
+                      <Cell key={w.window} fill={i === 0 ? chart.accent : chart.line} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
-          <div className="border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
+          <div className="border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500 dark:border-zinc-800">
             Booking closer to departure (T+1) carries the steepest fare premium — plan 30+ days out for the best rates.
           </div>
         </CardShell>
@@ -54,20 +58,20 @@ export default function IndexAnalytics() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={days} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e4e4e7" />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#71717a' }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#71717a' }} />
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: '#e4e4e7' }} />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={chart.grid} />
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={tickStyle(isDark)} />
+                  <YAxis tickLine={false} axisLine={false} tick={tickStyle(isDark)} />
+                  <Tooltip contentStyle={chart.tooltip} />
                   <Bar dataKey="indexValue" radius={[6, 6, 0, 0]}>
                     {days.map((d) => (
-                      <Cell key={d.day} fill={d.indexValue === maxDay ? '#dc2626' : '#18181b'} />
+                      <Cell key={d.day} fill={d.indexValue === maxDay ? chart.accent : chart.line} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
-          <div className="border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500">
+          <div className="border-t border-zinc-200 px-6 py-3 text-xs text-zinc-500 dark:border-zinc-800">
             Friday and Saturday departures see the highest average fares across tracked routes.
           </div>
         </CardShell>
@@ -77,7 +81,7 @@ export default function IndexAnalytics() {
         {windowsLoading ? (
           <LoadingBlock />
         ) : (
-          <div className="divide-y divide-zinc-100">
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {windows.map((w) => (
               <div key={w.window} className="flex items-center justify-between px-6 py-4">
                 <div>

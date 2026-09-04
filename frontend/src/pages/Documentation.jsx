@@ -11,7 +11,7 @@ export default function Documentation() {
         </p>
       </div>
 
-      <div className="max-w-3xl rounded-xl border border-zinc-200 bg-white p-6">
+      <div className="max-w-3xl rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="font-medium">Airfare Price Index</h2>
         <p className="mt-2 text-sm leading-6 text-zinc-500">
           This platform tracks airfare prices across major domestic routes

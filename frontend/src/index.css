@@ -6,6 +6,14 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   font-family:
@@ -17,6 +25,7 @@ body {
     "Segoe UI",
     sans-serif;
   background: #fafafa;
+  color: #09090b;
 }
 
 html.dark body {
