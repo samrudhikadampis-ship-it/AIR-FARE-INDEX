@@ -84,7 +84,7 @@ export default function Header() {
           </button>
           {bellOpen && (
             <div className="absolute right-0 z-30 mt-2 w-80 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-              <div className="border-b border-zinc-200 px-4 py-3 text-sm font-medium dark:border-zinc-800">
+              <div className="border-b border-zinc-200 px-4 py-3 text-sm font-medium dark:border-zinc-800 dark:text-zinc-50">
                 Notifications
               </div>
               <div className="max-h-80 divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -107,7 +107,7 @@ export default function Header() {
               <Link
                 to="/notifications"
                 onClick={() => setBellOpen(false)}
-                className="block border-t border-zinc-200 px-4 py-3 text-center text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                className="block border-t border-zinc-200 px-4 py-3 text-center text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800"
               >
                 View all
               </Link>
@@ -147,7 +147,7 @@ export default function Header() {
                   logout()
                   navigate('/login')
                 }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-zinc-50 dark:text-red-400 dark:hover:bg-zinc-800"
               >
                 <LogOut size={15} /> Log out
               </button>

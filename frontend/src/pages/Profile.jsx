@@ -13,9 +13,9 @@ export default function Profile() {
         </p>
       </div>
 
-      <div className="max-w-2xl rounded-xl border border-zinc-200 bg-white p-6">
+      <div className="max-w-2xl rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-sm font-medium text-white">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-sm font-medium text-white dark:bg-white dark:text-zinc-900">
             AI
           </div>
 

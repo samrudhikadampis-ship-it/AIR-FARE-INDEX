@@ -214,7 +214,7 @@ export default function SectorHeatmapGrid({ airports, lookup, metric, isDark }) 
   )
 }
 
-export function HeatmapLegend({ metric }) {
+export function HeatmapLegend({ metric, isDark }) {
   if (metric === 'changePercent') {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 px-6 py-3 dark:border-zinc-800">
@@ -223,7 +223,7 @@ export function HeatmapLegend({ metric }) {
           <span className="text-[11px] text-zinc-500">Fares down</span>
           <div
             className="h-2.5 w-36 rounded-full"
-            style={{ background: 'linear-gradient(90deg, #059669, #e4e4e7, #dc2626)' }}
+            style={{ background: isDark ? 'linear-gradient(90deg, #059669, #3f3f46, #dc2626)' : 'linear-gradient(90deg, #059669, #e4e4e7, #dc2626)' }}
           />
           <span className="text-[11px] text-zinc-500">Fares up</span>
         </div>
@@ -238,7 +238,7 @@ export function HeatmapLegend({ metric }) {
         <span className="text-[11px] text-zinc-500">Lower</span>
         <div
           className="h-2.5 w-36 rounded-full"
-          style={{ background: 'linear-gradient(90deg, #f1f5f9, #fbbf24, #dc2626)' }}
+          style={{ background: isDark ? 'linear-gradient(90deg, #27272a, #fbbf24, #dc2626)' : 'linear-gradient(90deg, #f1f5f9, #fbbf24, #dc2626)' }}
         />
         <span className="text-[11px] text-zinc-500">Higher</span>
       </div>

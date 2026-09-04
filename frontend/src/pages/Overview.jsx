@@ -18,10 +18,10 @@ export default function Overview() {
         description="Monitor airfare prices and market movements across major domestic routes."
         actions={
           <>
-            <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50">
+            <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
               Refresh
             </button>
-            <button className="flex items-center gap-2 rounded-lg bg-zinc-950 px-3 py-2 text-sm text-white hover:bg-zinc-800">
+            <button className="flex items-center gap-2 rounded-lg bg-zinc-950 px-3 py-2 text-sm text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200">
               Export
             </button>
           </>
@@ -29,7 +29,7 @@ export default function Overview() {
       />
 
       {/* Main analytics card */}
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <CurrentIndex />
         <div className="grid lg:grid-cols-[1.7fr_1fr]">
           <IndexTrendChart />

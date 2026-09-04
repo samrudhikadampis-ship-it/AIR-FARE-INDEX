@@ -24,10 +24,10 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 dark:bg-zinc-950">
+      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white dark:bg-white dark:text-black">
             <Plane size={20} />
           </div>
 
@@ -53,7 +53,7 @@ export default function Signup() {
               required
               value={name}
               onChange={(e) => { setName(e.target.value); setError('') }}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
           </label>
 
@@ -64,7 +64,7 @@ export default function Signup() {
               required
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError('') }}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
           </label>
 
@@ -75,7 +75,7 @@ export default function Signup() {
               required
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
-              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
           </label>
 
@@ -90,7 +90,7 @@ export default function Signup() {
           Already have an account?{' '}
           <Link
             to="/login"
-            className="font-medium text-zinc-950"
+            className="font-medium text-zinc-950 dark:text-white"
           >
             Sign in
           </Link>

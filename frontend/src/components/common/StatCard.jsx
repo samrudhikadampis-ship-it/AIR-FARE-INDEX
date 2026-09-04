@@ -1,7 +1,7 @@
 export default function StatCard({ label, value, hint, hintTone = 'neutral' }) {
   const toneClass = {
     up: 'text-emerald-600 dark:text-emerald-400',
-    down: 'text-red-500',
+    down: 'text-red-500 dark:text-red-400',
     neutral: 'text-zinc-500',
   }[hintTone]
 
