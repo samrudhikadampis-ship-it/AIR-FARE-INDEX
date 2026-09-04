@@ -7,6 +7,7 @@ import { NotificationsProvider } from './context/NotificationsContext'
 import AppShell, { ProtectedRoute, PublicOnlyRoute } from './components/layout/AppShell'
 import Overview from './pages/Overview'
 import RouteIntelligence from './pages/RouteIntelligence'
+import SectorHeatmap from './pages/SectorHeatmap'
 import LiveCollection from './pages/LiveCollection'
 import IndexAnalytics from './pages/IndexAnalytics'
 import PriceDrivers from './pages/PriceDrivers'
@@ -36,6 +37,7 @@ function App() {
                     <Route element={<AppShell />}>
                       <Route path="/" element={<Overview />} />
                       <Route path="/routes" element={<RouteIntelligence />} />
+                      <Route path="/heatmap" element={<SectorHeatmap />} />
                       <Route path="/live-collection" element={<LiveCollection />} />
                       <Route path="/analytics" element={<IndexAnalytics />} />
                       <Route path="/drivers" element={<PriceDrivers />} />

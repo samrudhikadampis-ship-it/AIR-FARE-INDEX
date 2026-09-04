@@ -5,6 +5,7 @@ import {
   BarChart3,
   Activity,
   Database,
+  Grid3x3,
   Settings,
   HelpCircle,
   Fuel,
@@ -18,6 +19,7 @@ import { useLayout } from '../../context/LayoutContext'
 const navigation = [
   { label: 'Overview', to: '/', icon: LayoutDashboard },
   { label: 'Route Intelligence', to: '/routes', icon: Plane },
+  { label: 'Sector Heatmap', to: '/heatmap', icon: Grid3x3 },
   { label: 'Live Collection', to: '/live-collection', icon: Activity },
   { label: 'Index Analytics', to: '/analytics', icon: BarChart3 },
   { label: 'Price Drivers', to: '/drivers', icon: Fuel },
