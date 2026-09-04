@@ -16,6 +16,7 @@ export default function RouteIntelligence() {
   const selectedId = params.get('route')
   const selectedRoute = routes.find((r) => r.id === selectedId) ?? null
   const { trend, comparison, loading: detailLoading } = useRouteDetail(selectedId)
+  const comparisonRows = Array.isArray(comparison) ? comparison : []
 
   const filtered = useMemo(() => {
     if (!search.trim()) return routes
@@ -145,15 +146,21 @@ export default function RouteIntelligence() {
                 <div className="divide-y divide-zinc-100">
                   {detailLoading ? (
                     <LoadingBlock />
+                  ) : comparisonRows.length === 0 ? (
+                    <p className="px-6 py-10 text-center text-sm text-zinc-500">
+                      No airline comparison available for this route.
+                    </p>
                   ) : (
-                    comparison.map((a) => (
-                      <div key={a.code} className="flex items-center justify-between px-6 py-4">
+                    comparisonRows.map((a, index) => (
+                      <div key={a.code ?? a.airline ?? index} className="flex items-center justify-between px-6 py-4">
                         <div>
                           <p className="text-sm font-medium">{a.airline}</p>
-                          <p className="text-xs text-zinc-500">{a.quotesCollected} quotes</p>
+                          <p className="text-xs text-zinc-500">{a.quotesCollected ?? 0} quotes</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-zinc-900">₹{a.avgFare.toLocaleString('en-IN')}</p>
+                          <p className="text-sm font-medium text-zinc-900">
+                            ₹{Number(a.avgFare || 0).toLocaleString('en-IN')}
+                          </p>
                           <ChangePill value={a.changePct} />
                         </div>
                       </div>
