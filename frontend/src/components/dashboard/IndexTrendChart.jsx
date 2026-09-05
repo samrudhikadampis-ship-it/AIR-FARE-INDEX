@@ -10,6 +10,7 @@ import {
 import { useNationalTrend } from '../../hooks/useNationalIndex'
 import { useTheme } from '../../context/ThemeContext'
 import { getChartTheme, tickStyle } from '../../theme/chartTheme'
+import { formatIndex } from '../../services/api/shape'
 
 const RANGE_OPTIONS = [
   { label: 'Last 30 Days', days: 30 },
@@ -32,21 +33,27 @@ function CustomTooltip({ active, payload, label }) {
 export default function IndexTrendChart() {
   const { isDark } = useTheme()
   const chart = getChartTheme(isDark)
-  const { trend, loading, rangeDays, setRangeDays } = useNationalTrend(30)
+  const { trend, loading, error, rangeDays, setRangeDays } = useNationalTrend(30)
+  const points = Array.isArray(trend) ? trend : []
 
-  const latest = trend[trend.length - 1]?.index
-  const first = trend[0]?.index
-  const changePct = first ? (((latest - first) / first) * 100).toFixed(1) : 0
-  const up = changePct >= 0
+  const latest = points[points.length - 1]?.index
+  const first = points[0]?.index
+  const canCompare = points.length >= 2 && first
+  const changePct = canCompare ? (((latest - first) / first) * 100).toFixed(1) : null
+  const up = changePct != null && Number(changePct) >= 0
 
   return (
     <div className="border-r border-zinc-200 p-6 dark:border-zinc-800">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-zinc-500">Index Trend</p>
-          <h3 className="mt-2 text-2xl font-semibold tracking-tight">{latest ?? '—'}</h3>
-          <p className={`mt-1 text-sm ${up ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-            {up ? '↑' : '↓'} {Math.abs(changePct)}% from range start
+          <h3 className="mt-2 text-2xl font-semibold tracking-tight">{formatIndex(latest)}</h3>
+          <p className={`mt-1 text-sm ${changePct == null ? 'text-zinc-500' : up ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            {changePct == null
+              ? points.length === 1
+                ? 'Single scrape date available'
+                : 'No trend comparison yet'
+              : `${up ? '↑' : '↓'} ${Math.abs(changePct)}% from range start`}
           </p>
         </div>
 
@@ -64,19 +71,23 @@ export default function IndexTrendChart() {
       <div className="mt-8 h-[320px] w-full">
         {loading ? (
           <div className="flex h-full items-center justify-center text-sm text-zinc-400">Loading trend…</div>
+        ) : error ? (
+          <div className="flex h-full items-center justify-center text-sm text-zinc-500">Unable to load trend data.</div>
+        ) : points.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-zinc-500">No scrape dates available.</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trend} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
+            <LineChart data={points} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
               <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={chart.grid} />
               <XAxis
                 dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tick={tickStyle(isDark)}
-                interval={Math.max(0, Math.floor(trend.length / 8))}
+                interval={Math.max(0, Math.floor(points.length / 8))}
               />
               <YAxis
-                domain={['dataMin - 2', 'dataMax + 2']}
+                domain={points.length === 1 ? ['auto', 'auto'] : ['dataMin - 2', 'dataMax + 2']}
                 tickLine={false}
                 axisLine={false}
                 tick={tickStyle(isDark)}
@@ -87,7 +98,7 @@ export default function IndexTrendChart() {
                 dataKey="index"
                 stroke={chart.line}
                 strokeWidth={2.5}
-                dot={false}
+                dot={points.length === 1}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
@@ -96,7 +107,7 @@ export default function IndexTrendChart() {
       </div>
 
       <p className="mt-3 text-xs text-zinc-400">
-        National airfare price index · Illustrative data
+        National airfare price index · {points.length <= 1 ? 'Limited to dates actually collected' : 'By scrape date'}
       </p>
     </div>
   )

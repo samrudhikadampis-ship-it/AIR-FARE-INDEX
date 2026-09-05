@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { getApiBase } from '../services/http'
 import { fetchRoutes, fetchRouteTrend, fetchRouteQuotes } from '../services/api/routesApi'
 import { buildAirlineComparison } from '../services/mock/routes'
 
@@ -14,25 +15,17 @@ function airlineComparisonFromQuotes(quotes) {
   }
 
   return [...groups.entries()].map(([airline, rows]) => {
-    const prices = rows.map((row) => Number(row.price_inr) || 0)
-    const avgFare = Math.round(prices.reduce((sum, n) => sum + n, 0) / prices.length)
-    const mid = Math.ceil(rows.length / 2)
-    const older = rows.slice(mid)
-    const newer = rows.slice(0, mid)
-    const olderAvg = older.length
-      ? older.reduce((sum, row) => sum + (Number(row.price_inr) || 0), 0) / older.length
-      : avgFare
-    const newerAvg = newer.length
-      ? newer.reduce((sum, row) => sum + (Number(row.price_inr) || 0), 0) / newer.length
-      : avgFare
-    const changePct = olderAvg ? Number((((newerAvg - olderAvg) / olderAvg) * 100).toFixed(1)) : 0
+    const prices = rows.map((row) => Number(row.price_inr)).filter((n) => Number.isFinite(n))
+    const avgFare = prices.length
+      ? Math.round(prices.reduce((sum, n) => sum + n, 0) / prices.length)
+      : null
     const code = rows[0].airlineCode || String(airline).slice(0, 2).toUpperCase()
 
     return {
       airline,
       code,
       avgFare,
-      changePct,
+      changePct: null,
       quotesCollected: rows.length,
     }
   })
@@ -41,7 +34,7 @@ function airlineComparisonFromQuotes(quotes) {
 function resolveComparison(routeId, quotes) {
   const fromQuotes = airlineComparisonFromQuotes(quotes)
   if (fromQuotes.length) return fromQuotes
-  if (!routeId) return []
+  if (getApiBase() || !routeId) return []
   const fallback = buildAirlineComparison(routeId)
   return Array.isArray(fallback) ? fallback : []
 }
@@ -56,10 +49,11 @@ export function useRoutes() {
     setError(null)
     fetchRoutes()
       .then((data) => {
-        setRoutes(data)
+        setRoutes(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch((err) => {
+        setRoutes([])
         setError(err.message || 'Failed to load routes')
         setLoading(false)
       })
@@ -83,6 +77,7 @@ export function useRouteDetail(routeId) {
       setTrend([])
       setQuotes([])
       setComparison([])
+      setError(null)
       setLoading(false)
       return
     }
@@ -97,8 +92,10 @@ export function useRouteDetail(routeId) {
         setLoading(false)
       })
       .catch((err) => {
-        setError(err.message || 'Failed to load route detail')
+        setTrend([])
+        setQuotes([])
         setComparison([])
+        setError(err.message || 'Failed to load route detail')
         setLoading(false)
       })
   }, [routeId])

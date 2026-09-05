@@ -1,23 +1,33 @@
-// GET /api/index/snapshot  GET /api/index/trend?days=  GET /api/index/booking-windows  GET /api/index/day-of-week
 import { apiGet } from '../http'
 import { getScrapeQuotes } from '../mock/quotes'
 import { buildNationalSnapshot, buildNationalTrend } from '../mock/aggregations'
 import { BOOKING_WINDOWS, DAY_OF_WEEK_TRENDS } from '../mock/nationalIndex'
+import {
+  normalizeBookingWindow,
+  normalizeDayOfWeek,
+  normalizeSnapshot,
+  normalizeTrendPoint,
+  unwrapItems,
+} from './shape'
 
 export async function fetchNationalSnapshot() {
-  return apiGet('/api/index/snapshot', () => buildNationalSnapshot(getScrapeQuotes()))
+  const data = await apiGet('/api/v1/index/snapshot', () => buildNationalSnapshot(getScrapeQuotes()))
+  return normalizeSnapshot(data)
 }
 
 export async function fetchNationalTrend(rangeDays = 30) {
-  return apiGet(`/api/index/trend?days=${rangeDays}`, () =>
+  const data = await apiGet(`/api/v1/index/trend?days=${rangeDays}`, () =>
     buildNationalTrend(getScrapeQuotes(), rangeDays)
   )
+  return unwrapItems(data).map(normalizeTrendPoint).filter(Boolean)
 }
 
 export async function fetchBookingWindows() {
-  return apiGet('/api/index/booking-windows', () => BOOKING_WINDOWS)
+  const data = await apiGet('/api/v1/index/booking-windows', () => BOOKING_WINDOWS)
+  return unwrapItems(data).map(normalizeBookingWindow).filter(Boolean)
 }
 
 export async function fetchDayOfWeekTrends() {
-  return apiGet('/api/index/day-of-week', () => DAY_OF_WEEK_TRENDS)
+  const data = await apiGet('/api/v1/index/day-of-week', () => DAY_OF_WEEK_TRENDS)
+  return unwrapItems(data).map(normalizeDayOfWeek).filter(Boolean)
 }

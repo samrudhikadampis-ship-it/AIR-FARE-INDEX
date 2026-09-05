@@ -20,6 +20,7 @@ export function useNationalSnapshot() {
         setLoading(false)
       })
       .catch((err) => {
+        setSnapshot(null)
         setError(err.message || 'Failed to load index')
         setLoading(false)
       })
@@ -44,10 +45,11 @@ export function useNationalTrend(initialRangeDays = 30) {
     setError(null)
     fetchNationalTrend(next)
       .then((data) => {
-        setTrend(data)
+        setTrend(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch((err) => {
+        setTrend([])
         setError(err.message || 'Failed to load trend')
         setLoading(false)
       })
@@ -69,10 +71,11 @@ export function useBookingWindows() {
     setError(null)
     fetchBookingWindows()
       .then((data) => {
-        setWindows(data)
+        setWindows(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch((err) => {
+        setWindows([])
         setError(err.message || 'Failed to load booking windows')
         setLoading(false)
       })
@@ -92,10 +95,11 @@ export function useDayOfWeekTrends() {
     setError(null)
     fetchDayOfWeekTrends()
       .then((data) => {
-        setDays(data)
+        setDays(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch((err) => {
+        setDays([])
         setError(err.message || 'Failed to load day trends')
         setLoading(false)
       })

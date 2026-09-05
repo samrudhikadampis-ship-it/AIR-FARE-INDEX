@@ -1,6 +1,7 @@
 import PageHeading from '../components/common/PageHeading'
 import CardShell from '../components/common/CardShell'
 import StatCard from '../components/common/StatCard'
+import LoadingBlock, { ErrorBlock } from '../components/common/LoadingBlock'
 import SectorHeatmapGrid, { HeatmapLegend } from '../components/heatmap/SectorHeatmapGrid'
 import { useSectorHeatmap } from '../hooks/useSectorHeatmap'
 import { useTheme } from '../context/ThemeContext'
@@ -45,7 +46,21 @@ export default function SectorHeatmap() {
     setPeriod,
     lookup,
     summary,
+    loading,
+    error,
   } = useSectorHeatmap()
+
+  const airportList = Array.isArray(airports) ? airports : []
+  const hottestHint = summary.hottest
+    ? summary.ranking === 'changePercent' && summary.hottest.changePercent != null
+      ? `+${summary.hottest.changePercent}% vs prior window`
+      : `Avg fare ₹${Number(summary.hottest.averageFare).toLocaleString('en-IN')}`
+    : undefined
+  const coolestHint = summary.coolest
+    ? summary.ranking === 'changePercent' && summary.coolest.changePercent != null
+      ? `${summary.coolest.changePercent > 0 ? '+' : ''}${summary.coolest.changePercent}% vs prior window`
+      : `Avg fare ₹${Number(summary.coolest.averageFare).toLocaleString('en-IN')}`
+    : undefined
 
   return (
     <div>
@@ -73,33 +88,39 @@ export default function SectorHeatmap() {
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <StatCard
           label="Sectors Mapped"
-          value={summary.count}
-          hint={`${airports.length} airports in the matrix`}
+          value={loading ? '—' : summary.count}
+          hint={`${airportList.length} airports in the matrix`}
         />
         <StatCard
           label="Hottest Sector"
           value={summary.hottest ? `${summary.hottest.origin} → ${summary.hottest.destination}` : '—'}
-          hint={summary.hottest ? `+${summary.hottest.changePercent}% vs prior window` : undefined}
+          hint={hottestHint}
           hintTone="down"
         />
         <StatCard
           label="Softest Sector"
           value={summary.coolest ? `${summary.coolest.origin} → ${summary.coolest.destination}` : '—'}
-          hint={
-            summary.coolest
-              ? `${summary.coolest.changePercent > 0 ? '+' : ''}${summary.coolest.changePercent}% vs prior window`
-              : undefined
-          }
+          hint={coolestHint}
           hintTone="up"
         />
       </div>
 
       <CardShell
         title="Route matrix"
-        subtitle={`${airports.length} × ${airports.length} origin–destination grid · ${period.toUpperCase()} window`}
+        subtitle={`${airportList.length} × ${airportList.length} origin–destination grid · ${period.toUpperCase()} window`}
       >
-        <SectorHeatmapGrid airports={airports} lookup={lookup} metric={metric} isDark={isDark} />
-        <HeatmapLegend metric={metric} isDark={isDark} />
+        {loading ? (
+          <LoadingBlock height="h-64" />
+        ) : error ? (
+          <ErrorBlock message="Unable to load heatmap sectors." />
+        ) : airportList.length === 0 ? (
+          <p className="px-6 py-16 text-center text-sm text-zinc-500">No sector observations are available.</p>
+        ) : (
+          <>
+            <SectorHeatmapGrid airports={airportList} lookup={lookup} metric={metric} isDark={isDark} />
+            <HeatmapLegend metric={metric} isDark={isDark} />
+          </>
+        )}
       </CardShell>
     </div>
   )
