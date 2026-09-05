@@ -1,14 +1,32 @@
 import { TrendingUp, TrendingDown, CalendarDays } from 'lucide-react'
 import { useNationalSnapshot } from '../../hooks/useNationalIndex'
+import { formatIndex } from '../../services/api/shape'
 
 export default function CurrentIndex({ rangeLabel = 'Last 30 Days', onRangeClick }) {
-  const { snapshot, loading } = useNationalSnapshot()
+  const { snapshot, loading, error } = useNationalSnapshot()
 
-  if (loading || !snapshot) {
+  if (loading) {
     return <div className="h-[140px] animate-pulse border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/50" />
   }
 
+  if (error) {
+    return (
+      <div className="border-b border-zinc-200 p-6 text-sm text-zinc-500 dark:border-zinc-800">
+        Unable to load the national index.
+      </div>
+    )
+  }
+
+  if (!snapshot || snapshot.current == null) {
+    return (
+      <div className="border-b border-zinc-200 p-6 text-sm text-zinc-500 dark:border-zinc-800">
+        No index snapshot is available yet.
+      </div>
+    )
+  }
+
   const up = snapshot.direction === 'up'
+  const showChange = snapshot.changePct != null
 
   return (
     <div className="border-b border-zinc-200 p-6 lg:p-7 dark:border-zinc-800">
@@ -20,15 +38,17 @@ export default function CurrentIndex({ rangeLabel = 'Last 30 Days', onRangeClick
           </div>
 
           <div className="mt-3 flex items-baseline gap-3">
-            <h2 className="text-4xl font-semibold tracking-tight">{snapshot.current}</h2>
+            <h2 className="text-4xl font-semibold tracking-tight">{formatIndex(snapshot.current)}</h2>
 
-            <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${up ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'}`}>
-              {up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-              {snapshot.changePct}%
-            </span>
+            {showChange ? (
+              <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${up ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'}`}>
+                {up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                {snapshot.changePct}%
+              </span>
+            ) : null}
           </div>
 
-          <p className="mt-2 text-sm text-zinc-500">{snapshot.summary}</p>
+          <p className="mt-2 text-sm text-zinc-500">{snapshot.summary || 'Fare index proxy from collected quotes.'}</p>
         </div>
 
         <button

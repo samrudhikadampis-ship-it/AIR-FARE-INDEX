@@ -48,9 +48,11 @@ function cellTextClass(value, metric, isDark) {
 
 function formatMetric(sector, metric) {
   if (metric === 'changePercent') {
+    if (sector.changePercent == null) return '—'
     const sign = sector.changePercent > 0 ? '+' : ''
     return `${sign}${sector.changePercent}%`
   }
+  if (sector.averageFare == null) return '—'
   return `₹${sector.averageFare.toLocaleString('en-IN')}`
 }
 
@@ -59,17 +61,25 @@ export default function SectorHeatmapGrid({ airports, lookup, metric, isDark }) 
   const wrapRef = useRef(null)
   const [tip, setTip] = useState(null)
 
-  const fareValues = [...lookup.values()].map((s) => s.averageFare)
+  const fareValues = [...lookup.values()].map((s) => s.averageFare).filter((n) => Number.isFinite(n))
   const fareMin = fareValues.length ? Math.min(...fareValues) : 0
   const fareMax = fareValues.length ? Math.max(...fareValues) : 1
 
   function fillFor(sector) {
-    if (metric === 'changePercent') return changeFill(sector.changePercent, isDark)
+    if (metric === 'changePercent') {
+      if (sector.changePercent == null) return isDark ? 'rgb(39, 39, 42)' : 'rgb(244, 244, 245)'
+      return changeFill(sector.changePercent, isDark)
+    }
+    if (sector.averageFare == null) return isDark ? 'rgb(39, 39, 42)' : 'rgb(244, 244, 245)'
     return fareFill(sector.averageFare, fareMin, fareMax, isDark)
   }
 
   function intensity(sector) {
-    if (metric === 'changePercent') return Math.abs(sector.changePercent)
+    if (metric === 'changePercent') {
+      if (sector.changePercent == null) return 0
+      return Math.abs(sector.changePercent)
+    }
+    if (sector.averageFare == null) return 0
     return (sector.averageFare - fareMin) / Math.max(1, fareMax - fareMin)
   }
 
@@ -193,17 +203,19 @@ export default function SectorHeatmapGrid({ airports, lookup, metric, isDark }) 
             <p>
               Average fare{' '}
               <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                ₹{tip.sector.averageFare.toLocaleString('en-IN')}
+                {tip.sector.averageFare == null ? '—' : `₹${tip.sector.averageFare.toLocaleString('en-IN')}`}
               </span>
             </p>
             <p>
               Index value{' '}
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">{tip.sector.indexValue}</span>
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                {tip.sector.indexValue == null ? '—' : tip.sector.indexValue}
+              </span>
             </p>
             <p>
               Observations{' '}
               <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                {tip.sector.observations.toLocaleString('en-IN')}
+                {tip.sector.observations == null ? '—' : tip.sector.observations.toLocaleString('en-IN')}
               </span>
             </p>
           </div>

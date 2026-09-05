@@ -1,15 +1,16 @@
-// GET /api/collection/sources  GET /api/collection/timeline  GET /api/collection/summary
 import { apiGet } from '../http'
 import { SOURCES, buildCollectionTimeline, COLLECTION_SUMMARY } from '../mock/collection'
+import { normalizeCollectionSummary } from './shape'
 
 export async function fetchSources() {
-  return apiGet('/api/collection/sources', () => SOURCES)
+  return apiGet('/api/v1/collection/sources', () => SOURCES)
 }
 
 export async function fetchCollectionTimeline(hours = 24) {
-  return apiGet(`/api/collection/timeline?hours=${hours}`, () => buildCollectionTimeline(hours))
+  return apiGet(`/api/v1/collection/timeline?hours=${hours}`, () => buildCollectionTimeline(hours))
 }
 
 export async function fetchCollectionSummary() {
-  return apiGet('/api/collection/summary', () => COLLECTION_SUMMARY)
+  const data = await apiGet('/api/v1/collection/summary', () => COLLECTION_SUMMARY)
+  return normalizeCollectionSummary(data)
 }

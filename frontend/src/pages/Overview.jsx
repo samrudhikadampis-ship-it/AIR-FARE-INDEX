@@ -5,10 +5,24 @@ import StatCard from '../components/common/StatCard'
 import PageHeading from '../components/common/PageHeading'
 import { useCollectionStatus } from '../hooks/useCollectionStatus'
 import { useRoutes } from '../hooks/useRoutes'
+import { formatInt } from '../services/api/shape'
 
 export default function Overview() {
-  const { summary, loading: collectionLoading } = useCollectionStatus()
-  const { routes } = useRoutes()
+  const { summary, loading: collectionLoading, error: collectionError } = useCollectionStatus()
+  const { routes, loading: routesLoading, error: routesError } = useRoutes()
+  const routeCount = Array.isArray(routes) ? routes.length : 0
+
+  const quotesValue = collectionLoading
+    ? '—'
+    : collectionError || !summary
+      ? '—'
+      : formatInt(summary.quotesTotal)
+
+  const coverageValue = collectionLoading
+    ? '—'
+    : summary?.dataCoveragePct != null
+      ? `${summary.dataCoveragePct}%`
+      : '—'
 
   return (
     <div>
@@ -28,7 +42,6 @@ export default function Overview() {
         }
       />
 
-      {/* Main analytics card */}
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <CurrentIndex />
         <div className="grid lg:grid-cols-[1.7fr_1fr]">
@@ -37,24 +50,23 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* Bottom cards */}
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <StatCard
           label="Routes Tracked"
-          value={routes.length || '—'}
-          hint="● All routes operational"
-          hintTone="up"
+          value={routesLoading ? '—' : routesError ? '—' : routeCount || '—'}
+          hint={routesError ? 'Unable to load routes' : '● All routes operational'}
+          hintTone={routesError ? undefined : 'up'}
         />
         <StatCard
           label="Quotes Collected"
-          value={collectionLoading ? '—' : summary.quotesCollectedToday.toLocaleString('en-IN')}
-          hint="Updated 2 minutes ago"
+          value={quotesValue}
+          hint={collectionError ? 'Unable to load collection summary' : undefined}
         />
         <StatCard
           label="Data Coverage"
-          value={collectionLoading ? '—' : `${summary.dataCoveragePct}%`}
-          hint="↑ 1.4% this week"
-          hintTone="up"
+          value={coverageValue}
+          hint={summary?.dataCoveragePct != null ? '↑ 1.4% this week' : 'Not available from current collection feed'}
+          hintTone={summary?.dataCoveragePct != null ? 'up' : undefined}
         />
       </div>
     </div>

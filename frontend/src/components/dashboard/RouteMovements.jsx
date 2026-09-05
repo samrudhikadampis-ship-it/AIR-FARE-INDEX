@@ -1,19 +1,31 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { useRoutes } from '../../hooks/useRoutes'
+import { formatInr } from '../../services/api/shape'
 
 export default function RouteMovements() {
-  const { routes, loading } = useRoutes()
+  const { routes, loading, error } = useRoutes()
+  const list = Array.isArray(routes) ? routes : []
 
-  const notable = [...routes]
+  const notable = [...list]
+    .filter((route) => route.changePct != null)
     .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))
     .slice(0, 4)
+
+  const fallback = notable.length
+    ? notable
+    : [...list]
+        .filter((route) => route.avgFare != null)
+        .sort((a, b) => b.avgFare - a.avgFare)
+        .slice(0, 4)
 
   return (
     <div>
       <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <p className="text-sm font-medium">Route Movements</p>
-        <p className="mt-1 text-xs text-zinc-500">Routes with notable price changes</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          {notable.length ? 'Routes with notable price changes' : 'Highest average fares among tracked routes'}
+        </p>
       </div>
 
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -22,9 +34,19 @@ export default function RouteMovements() {
             <div key={i} className="h-[76px] animate-pulse bg-zinc-50 dark:bg-zinc-800/50" />
           ))}
 
+        {!loading && error && (
+          <p className="px-6 py-10 text-center text-sm text-zinc-500">Unable to load routes.</p>
+        )}
+
+        {!loading && !error && fallback.length === 0 && (
+          <p className="px-6 py-10 text-center text-sm text-zinc-500">No route records available.</p>
+        )}
+
         {!loading &&
-          notable.map((route) => {
-            const up = route.changePct >= 0
+          !error &&
+          fallback.map((route) => {
+            const showChange = route.changePct != null
+            const up = showChange && route.changePct >= 0
             return (
               <Link
                 to={`/routes?route=${route.id}`}
@@ -36,14 +58,20 @@ export default function RouteMovements() {
                     {route.from} → {route.to}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Avg. fare ₹{route.avgFare.toLocaleString('en-IN')}
+                    Avg. fare {formatInr(route.avgFare)}
                   </p>
                 </div>
 
-                <div className={`flex items-center gap-1 text-sm font-medium ${up ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  {up ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                  {up ? '+' : ''}{route.changePct}%
-                </div>
+                {showChange ? (
+                  <div className={`flex items-center gap-1 text-sm font-medium ${up ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {up ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                    {up ? '+' : ''}{route.changePct}%
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    {formatInr(route.avgFare)}
+                  </div>
+                )}
               </Link>
             )
           })}

@@ -5,34 +5,37 @@ import { Search, X } from 'lucide-react'
 import PageHeading from '../components/common/PageHeading'
 import CardShell from '../components/common/CardShell'
 import ChangePill from '../components/common/ChangePill'
-import LoadingBlock from '../components/common/LoadingBlock'
+import LoadingBlock, { ErrorBlock } from '../components/common/LoadingBlock'
 import { useRoutes, useRouteDetail } from '../hooks/useRoutes'
 import { useTheme } from '../context/ThemeContext'
 import { getChartTheme, tickStyle } from '../theme/chartTheme'
+import { formatIndex, formatInr, formatInt } from '../services/api/shape'
 
 export default function RouteIntelligence() {
   const { isDark } = useTheme()
   const chart = getChartTheme(isDark)
-  const { routes, loading } = useRoutes()
+  const { routes, loading, error } = useRoutes()
   const [params, setParams] = useSearchParams()
   const [search, setSearch] = useState('')
+  const routeList = Array.isArray(routes) ? routes : []
 
   const selectedId = params.get('route')
-  const selectedRoute = routes.find((r) => r.id === selectedId) ?? null
-  const { trend, comparison, loading: detailLoading } = useRouteDetail(selectedId)
+  const selectedRoute = routeList.find((r) => r.id === selectedId) ?? null
+  const { trend, comparison, loading: detailLoading, error: detailError } = useRouteDetail(selectedId)
   const comparisonRows = Array.isArray(comparison) ? comparison : []
+  const trendPoints = Array.isArray(trend) ? trend : []
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return routes
+    if (!search.trim()) return routeList
     const q = search.trim().toLowerCase()
-    return routes.filter(
-      (r) =>
-        r.from.toLowerCase().includes(q) ||
-        r.to.toLowerCase().includes(q) ||
-        r.fromCity.toLowerCase().includes(q) ||
-        r.toCity.toLowerCase().includes(q)
-    )
-  }, [routes, search])
+    return routeList.filter((r) => {
+      const from = String(r.from ?? '').toLowerCase()
+      const to = String(r.to ?? '').toLowerCase()
+      const fromCity = String(r.fromCity ?? r.from ?? '').toLowerCase()
+      const toCity = String(r.toCity ?? r.to ?? '').toLowerCase()
+      return from.includes(q) || to.includes(q) || fromCity.includes(q) || toCity.includes(q)
+    })
+  }, [routeList, search])
 
   function selectRoute(id) {
     setParams(id ? { route: id } : {})
@@ -47,10 +50,9 @@ export default function RouteIntelligence() {
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-        {/* Route table */}
         <CardShell
           title="All Tracked Routes"
-          subtitle={`${filtered.length} of ${routes.length} routes`}
+          subtitle={`${filtered.length} of ${routeList.length} routes`}
           actions={
             <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <Search size={15} className="text-zinc-400" />
@@ -65,6 +67,10 @@ export default function RouteIntelligence() {
         >
           {loading ? (
             <LoadingBlock />
+          ) : error ? (
+            <ErrorBlock message="Unable to load routes." />
+          ) : filtered.length === 0 ? (
+            <p className="px-6 py-16 text-center text-sm text-zinc-500">No routes match this view.</p>
           ) : (
             <div className="max-h-[560px] overflow-y-auto">
               <table className="w-full text-sm">
@@ -87,8 +93,8 @@ export default function RouteIntelligence() {
                         <p className="font-medium text-zinc-950 dark:text-zinc-50">{r.from} → {r.to}</p>
                         <p className="text-xs text-zinc-500">{r.fromCity} to {r.toCity}</p>
                       </td>
-                      <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">₹{r.avgFare.toLocaleString('en-IN')}</td>
-                      <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">{r.indexValue}</td>
+                      <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">{formatInr(r.avgFare)}</td>
+                      <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300">{formatIndex(r.indexValue)}</td>
                       <td className="px-4 py-3.5"><ChangePill value={r.changePct} /></td>
                     </tr>
                   ))}
@@ -98,12 +104,19 @@ export default function RouteIntelligence() {
           )}
         </CardShell>
 
-        {/* Detail panel */}
         <div className="space-y-6">
-          {!selectedRoute && (
+          {!selectedId && (
             <CardShell>
               <div className="p-10 text-center text-sm text-zinc-500">
                 Select a route from the table to see its trend and airline comparison.
+              </div>
+            </CardShell>
+          )}
+
+          {selectedId && !loading && !selectedRoute && (
+            <CardShell>
+              <div className="p-10 text-center text-sm text-zinc-500">
+                This route is not in the current dataset.
               </div>
             </CardShell>
           )}
@@ -121,24 +134,28 @@ export default function RouteIntelligence() {
               >
                 <div className="p-6">
                   <div className="flex items-baseline gap-3">
-                    <h3 className="text-2xl font-semibold tracking-tight">{selectedRoute.indexValue}</h3>
+                    <h3 className="text-2xl font-semibold tracking-tight">{formatIndex(selectedRoute.indexValue)}</h3>
                     <ChangePill value={selectedRoute.changePct} />
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Avg. fare ₹{selectedRoute.avgFare.toLocaleString('en-IN')} · {selectedRoute.quotesCollected} quotes collected
+                    Avg. fare {formatInr(selectedRoute.avgFare)} · {formatInt(selectedRoute.quotesCollected)} quotes collected
                   </p>
 
                   <div className="mt-6 h-[200px] w-full">
                     {detailLoading ? (
                       <LoadingBlock height="h-full" />
+                    ) : detailError ? (
+                      <ErrorBlock message="Unable to load route trend." />
+                    ) : trendPoints.length === 0 ? (
+                      <p className="flex h-full items-center justify-center text-sm text-zinc-500">No scrape-date trend for this route.</p>
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trend} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                        <LineChart data={trendPoints} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={chart.grid} />
                           <XAxis dataKey="date" tickLine={false} axisLine={false} tick={tickStyle(isDark, 11)} interval={4} />
                           <YAxis tickLine={false} axisLine={false} tick={tickStyle(isDark, 11)} />
                           <Tooltip contentStyle={chart.tooltip} />
-                          <Line type="monotone" dataKey="index" stroke={chart.line} strokeWidth={2} dot={false} />
+                          <Line type="monotone" dataKey="index" stroke={chart.line} strokeWidth={2} dot={trendPoints.length === 1} />
                         </LineChart>
                       </ResponsiveContainer>
                     )}
@@ -150,6 +167,8 @@ export default function RouteIntelligence() {
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {detailLoading ? (
                     <LoadingBlock />
+                  ) : detailError ? (
+                    <ErrorBlock message="Unable to load route quotes." />
                   ) : comparisonRows.length === 0 ? (
                     <p className="px-6 py-10 text-center text-sm text-zinc-500">
                       No airline comparison available for this route.
@@ -159,11 +178,11 @@ export default function RouteIntelligence() {
                       <div key={a.code ?? a.airline ?? index} className="flex items-center justify-between px-6 py-4">
                         <div>
                           <p className="text-sm font-medium">{a.airline}</p>
-                          <p className="text-xs text-zinc-500">{a.quotesCollected ?? 0} quotes</p>
+                          <p className="text-xs text-zinc-500">{formatInt(a.quotesCollected)} quotes</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                            ₹{Number(a.avgFare || 0).toLocaleString('en-IN')}
+                            {formatInr(a.avgFare)}
                           </p>
                           <ChangePill value={a.changePct} />
                         </div>
