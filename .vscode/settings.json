@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "/workspaces/AIR-FARE-INDEX/backend/scraper/venv/bin/python",
+  "python.analysis.extraPaths": [
+    "/workspaces/AIR-FARE-INDEX/backend/scraper/venv/lib/python3.12/site-packages"
+  ]
+}
