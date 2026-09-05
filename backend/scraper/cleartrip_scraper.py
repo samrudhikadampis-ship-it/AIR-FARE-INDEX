@@ -2,6 +2,7 @@ import asyncio
 import json
 import random
 import re
+import os  
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
@@ -89,7 +90,7 @@ async def scrape_single_url(browser, semaphore, from_code, to_code, date_str, de
                 await page.wait_for_load_state("domcontentloaded", timeout=5000)
             except Exception:
                 pass
-           
+            
             await page.evaluate("window.scrollBy(0, 7000)")
             await asyncio.sleep(1)
 
@@ -114,7 +115,7 @@ async def scrape_single_url(browser, semaphore, from_code, to_code, date_str, de
                         seen_signatures.add(signature)
                         route_flights.append(record)
 
-            print(f"✔ Successfully scraped {len(route_flights)} records for {from_code}->{to_code} on {date_str}")
+            print(f"Successfully scraped {len(route_flights)} records for {from_code}->{to_code} on {date_str}")
 
         except Exception as e:
             print(f"Error scraping {from_code}->{to_code} ({date_str}): {e}")
@@ -145,10 +146,32 @@ async def main():
         await browser.close()
         
         all_flights_data = [flight for sublist in results for flight in sublist]
-        with open('fast_flights_data.json', 'w', encoding='utf-8') as f:
-            json.dump(all_flights_data, f, indent=4, ensure_ascii=False)
+        
+   
+        if all_flights_data:
+            file_path = 'fast_flights_data.json'
             
-        print(f"\n✔ Done! Total records saved: {len(all_flights_data)}")
+            if not os.path.exists(file_path) or os.path.getsize(file_path) <= 4:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(all_flights_data, f, indent=4, ensure_ascii=False)
+            else:
+                with open(file_path, 'rb+') as f:
+                    f.seek(0, 2)  
+                    while f.tell() > 0:
+                        f.seek(-1, 1)  
+                        char = f.read(1)
+                        if char == b']':
+                            f.seek(-1, 1)  
+                            f.truncate()   
+                            break
+                        f.seek(-1, 1)      
+
+                
+                with open(file_path, 'a', encoding='utf-8') as f:
+                    new_data_str = json.dumps(all_flights_data, indent=4, ensure_ascii=False)
+                    f.write(",\n" + new_data_str[1:])
+            
+        print(f"\nDone! Total records saved: {len(all_flights_data)}")
 
 if __name__ == "__main__":
     asyncio.run(main())
