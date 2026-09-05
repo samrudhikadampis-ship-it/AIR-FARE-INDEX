@@ -3,10 +3,17 @@ import json
 import os
 import random
 import re
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
+
+_BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(_BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_ROOT))
+
+from app.storage.scrape_cycle import SOURCE_EASEMYTRIP, ScrapeCycle, run_search_and_ingest
 
 AIRPORTS = {
     "CCU": "Kolkata",
@@ -644,6 +651,7 @@ async def scrape_single_url(
                 f"{from_code}->{to_code} "
                 f"({date_str}): {e}"
             )
+            raise
 
         finally:
 
@@ -686,122 +694,146 @@ async def main():
     )
 
     all_flights_data = []
+    cycle = ScrapeCycle(
+        SOURCE_EASEMYTRIP,
+        collected_on=today.date(),
+        target_windows=advance_windows,
+    )
+    cycle.start()
 
-    async with async_playwright() as p:
+    try:
+        async with async_playwright() as p:
+
+            print("\n===================================")
+            print("     EASEMYTRIP FLIGHT SCRAPER")
+            print("===================================\n")
+
+            print(
+                f"Today's date: "
+                f"{current_date_str}"
+            )
+
+            print(
+                f"Routes: {len(routes)}"
+            )
+
+            print(
+                f"Date offsets: {advance_windows}"
+            )
+
+            print(
+                f"Total searches: "
+                f"{len(routes) * len(advance_windows)}"
+            )
+
+            print()
+
+            browser = await p.chromium.launch(
+                headless=True
+            )
+
+            tasks = []
+
+            # =====================================================
+            # EXACT SAME 4 × 5 STRUCTURE
+            # =====================================================
+
+            for from_code, to_code in routes:
+
+                for offset in advance_windows:
+
+                    dep = today + timedelta(
+                        days=offset
+                    )
+
+                    date_str = dep.strftime(
+                        "%Y-%m-%d"
+                    )
+
+                    tasks.append(
+                        run_search_and_ingest(
+                            cycle,
+                            scrape_single_url(
+                                browser,
+                                semaphore,
+                                from_code,
+                                to_code,
+                                date_str,
+                                current_date_str
+                            ),
+                            origin_iata=from_code,
+                            dest_iata=to_code,
+                            travel_date=dep.date(),
+                            request_metadata={
+                                "url": build_route_url(from_code, to_code),
+                                "window_days": offset,
+                                "passengers": 1,
+                                "cabin": "economy",
+                            },
+                        )
+                    )
+
+            # Run all searches; each task ingests as soon as that URL finishes.
+            results = await asyncio.gather(
+                *tasks
+            )
+
+            await browser.close()
+
+            # Flatten results and remove only meaningful duplicates.
+            all_signatures = set()
+
+            for sublist in results:
+
+                for record in sublist:
+
+                    signature = flight_signature(record)
+
+                    if signature in all_signatures:
+                        continue
+
+                    all_signatures.add(signature)
+                    all_flights_data.append(record)
+
+        # =========================================================
+        # SAVE JSON (debug/backup only)
+        # =========================================================
+
+        write_json_atomically(
+            output_path,
+            all_flights_data
+        )
 
         print("\n===================================")
-        print("     EASEMYTRIP FLIGHT SCRAPER")
-        print("===================================\n")
+        print("              DONE")
+        print("===================================")
 
         print(
-            f"Today's date: "
-            f"{current_date_str}"
-        )
-
-        print(
-            f"Routes: {len(routes)}"
+            f"Total records saved: "
+            f"{len(all_flights_data)}"
         )
 
         print(
-            f"Date offsets: {advance_windows}"
+            f"Output file: "
+            f"{output_path}"
         )
 
         print(
-            f"Total searches: "
-            f"{len(routes) * len(advance_windows)}"
+            "First records:"
         )
 
-        print()
-
-        browser = await p.chromium.launch(
-            headless=True
+        print(
+            json.dumps(
+                all_flights_data[:3],
+                indent=4,
+                ensure_ascii=False
+            )
         )
-
-        tasks = []
-
-        # =====================================================
-        # EXACT SAME 4 × 5 STRUCTURE
-        # =====================================================
-
-        for from_code, to_code in routes:
-
-            for offset in advance_windows:
-
-                dep = today + timedelta(
-                    days=offset
-                )
-
-                date_str = dep.strftime(
-                    "%Y-%m-%d"
-                )
-
-                tasks.append(
-                    scrape_single_url(
-                        browser,
-                        semaphore,
-                        from_code,
-                        to_code,
-                        date_str,
-                        current_date_str
-                    )
-                )
-
-        # Run all searches
-        results = await asyncio.gather(
-            *tasks
+    finally:
+        status = cycle.finish()
+        print(
+            f"PostgreSQL scrape_run {cycle.run_id} status={status}"
         )
-
-        await browser.close()
-
-        # Flatten results and remove only meaningful duplicates.
-        all_signatures = set()
-
-        for sublist in results:
-
-            for record in sublist:
-
-                signature = flight_signature(record)
-
-                if signature in all_signatures:
-                    continue
-
-                all_signatures.add(signature)
-                all_flights_data.append(record)
-
-    # =========================================================
-    # SAVE JSON
-    # =========================================================
-
-    write_json_atomically(
-        output_path,
-        all_flights_data
-    )
-
-    print("\n===================================")
-    print("              DONE")
-    print("===================================")
-
-    print(
-        f"Total records saved: "
-        f"{len(all_flights_data)}"
-    )
-
-    print(
-        f"Output file: "
-        f"{output_path}"
-    )
-
-    print(
-        "First records:"
-    )
-
-    print(
-        json.dumps(
-            all_flights_data[:3],
-            indent=4,
-            ensure_ascii=False
-        )
-    )
 
 
 # ============================================================

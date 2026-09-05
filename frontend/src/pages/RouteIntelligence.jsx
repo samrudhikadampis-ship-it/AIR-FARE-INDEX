@@ -14,7 +14,7 @@ import { formatIndex, formatInr, formatInt } from '../services/api/shape'
 export default function RouteIntelligence() {
   const { isDark } = useTheme()
   const chart = getChartTheme(isDark)
-  const { routes, loading, error } = useRoutes()
+  const { routes, loading, error, reload } = useRoutes()
   const [params, setParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const routeList = Array.isArray(routes) ? routes : []
@@ -68,7 +68,7 @@ export default function RouteIntelligence() {
           {loading ? (
             <LoadingBlock />
           ) : error ? (
-            <ErrorBlock message="Unable to load routes." />
+            <ErrorBlock message="Unable to load routes." onRetry={reload} />
           ) : filtered.length === 0 ? (
             <p className="px-6 py-16 text-center text-sm text-zinc-500">No routes match this view.</p>
           ) : (

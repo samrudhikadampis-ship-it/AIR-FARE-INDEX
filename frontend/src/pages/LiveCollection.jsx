@@ -67,7 +67,7 @@ export default function LiveCollection() {
               value={loading || error || !summary?.lastCollectedAt ? '—' : summary.lastCollectedAt}
             />
             <StatCard
-              label="Source"
+              label="Sources"
               value={loading || error || !summary?.source ? '—' : summary.source}
             />
           </>

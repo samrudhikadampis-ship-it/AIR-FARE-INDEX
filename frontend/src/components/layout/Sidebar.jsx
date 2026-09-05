@@ -15,6 +15,7 @@ import {
   User,
 } from 'lucide-react'
 import { useLayout } from '../../context/LayoutContext'
+import { getApiBase } from '../../services/http'
 
 const navigation = [
   { label: 'Overview', to: '/', icon: LayoutDashboard },
@@ -110,7 +111,11 @@ function SidebarPanel({ collapsed, onNavigate, showCollapse }) {
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Data collection active</span>
             </div>
-            <p className="text-xs leading-relaxed text-zinc-500">Mock quotes until a backend is connected.</p>
+            <p className="text-xs leading-relaxed text-zinc-500">
+              {getApiBase()
+                ? 'Serving live fare observations from the connected API.'
+                : 'Local mock quotes. Set an API base to use live data.'}
+            </p>
           </div>
         )}
         {showCollapse && (
