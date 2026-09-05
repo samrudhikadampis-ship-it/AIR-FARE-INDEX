@@ -11,6 +11,7 @@ import { useNationalTrend } from '../../hooks/useNationalIndex'
 import { useTheme } from '../../context/ThemeContext'
 import { getChartTheme, tickStyle } from '../../theme/chartTheme'
 import { formatIndex } from '../../services/api/shape'
+import { ErrorBlock } from '../common/LoadingBlock'
 
 const RANGE_OPTIONS = [
   { label: 'Last 30 Days', days: 30 },
@@ -33,7 +34,7 @@ function CustomTooltip({ active, payload, label }) {
 export default function IndexTrendChart() {
   const { isDark } = useTheme()
   const chart = getChartTheme(isDark)
-  const { trend, loading, error, rangeDays, setRangeDays } = useNationalTrend(30)
+  const { trend, loading, error, rangeDays, setRangeDays, reload } = useNationalTrend(30)
   const points = Array.isArray(trend) ? trend : []
 
   const latest = points[points.length - 1]?.index
@@ -72,7 +73,7 @@ export default function IndexTrendChart() {
         {loading ? (
           <div className="flex h-full items-center justify-center text-sm text-zinc-400">Loading trend…</div>
         ) : error ? (
-          <div className="flex h-full items-center justify-center text-sm text-zinc-500">Unable to load trend data.</div>
+          <ErrorBlock message="Unable to load trend data." onRetry={() => reload(rangeDays)} />
         ) : points.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm text-zinc-500">No scrape dates available.</div>
         ) : (

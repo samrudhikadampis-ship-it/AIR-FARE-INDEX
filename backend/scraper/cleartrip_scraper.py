@@ -2,10 +2,18 @@ import asyncio
 import json
 import random
 import re
-import os  
+import os
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
+
+_BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(_BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_ROOT))
+
+from app.storage.scrape_cycle import SOURCE_CLEARTRIP, ScrapeCycle, run_search_and_ingest
 
 AIRPORTS = {"CCU": "Kolkata", "BOM": "Mumbai", "DEL": "New Delhi", "BLR": "Bengaluru"}
 advance_windows = [1, 7, 15, 30, 45]
@@ -119,6 +127,7 @@ async def scrape_single_url(browser, semaphore, from_code, to_code, date_str, de
 
         except Exception as e:
             print(f"Error scraping {from_code}->{to_code} ({date_str}): {e}")
+            raise
         finally:
             if page:
                 await page.close()
@@ -128,50 +137,78 @@ async def scrape_single_url(browser, semaphore, from_code, to_code, date_str, de
 async def main():
     semaphore = asyncio.Semaphore(1)  
     current_date_str = today.strftime("%Y-%m-%d")
-    
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        tasks = []
-        for from_code, to_code in routes:
-            for offset in advance_windows:
-                dep = today + timedelta(days=offset)
-                date_str = dep.strftime("%Y-%m-%d")
-                dep_date_formatted = dep.strftime("%d/%m/%Y")
-                
-                tasks.append(scrape_single_url(
-                    browser, semaphore, from_code, to_code, date_str, dep_date_formatted, current_date_str
-                ))
-        
-        results = await asyncio.gather(*tasks)
-        await browser.close()
-        
+    cycle = ScrapeCycle(
+        SOURCE_CLEARTRIP,
+        collected_on=today.date(),
+        target_windows=advance_windows,
+    )
+    cycle.start()
+    all_flights_data = []
+
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            tasks = []
+            for from_code, to_code in routes:
+                for offset in advance_windows:
+                    dep = today + timedelta(days=offset)
+                    date_str = dep.strftime("%Y-%m-%d")
+                    dep_date_formatted = dep.strftime("%d/%m/%Y")
+                    url = (
+                        f"https://www.cleartrip.com/flights/results?adults=1&childs=0&infants=0"
+                        f"&class=Economy&depart_date={dep_date_formatted}&from={from_code}&to={to_code}"
+                        f"&intl=n&origin={from_code}+-+{AIRPORTS[from_code]},+IN"
+                        f"&destination={to_code}+-+{AIRPORTS[to_code]},+IN&rnd_one=O&isCfw=false"
+                    )
+                    tasks.append(
+                        run_search_and_ingest(
+                            cycle,
+                            scrape_single_url(
+                                browser, semaphore, from_code, to_code, date_str, dep_date_formatted, current_date_str
+                            ),
+                            origin_iata=from_code,
+                            dest_iata=to_code,
+                            travel_date=dep.date(),
+                            request_metadata={
+                                "url": url,
+                                "window_days": offset,
+                                "passengers": 1,
+                                "cabin": "economy",
+                            },
+                        )
+                    )
+
+            results = await asyncio.gather(*tasks)
+            await browser.close()
+
         all_flights_data = [flight for sublist in results for flight in sublist]
-        
-   
+
         if all_flights_data:
             file_path = 'fast_flights_data.json'
-            
+
             if not os.path.exists(file_path) or os.path.getsize(file_path) <= 4:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(all_flights_data, f, indent=4, ensure_ascii=False)
             else:
                 with open(file_path, 'rb+') as f:
-                    f.seek(0, 2)  
+                    f.seek(0, 2)
                     while f.tell() > 0:
-                        f.seek(-1, 1)  
+                        f.seek(-1, 1)
                         char = f.read(1)
                         if char == b']':
-                            f.seek(-1, 1)  
-                            f.truncate()   
+                            f.seek(-1, 1)
+                            f.truncate()
                             break
-                        f.seek(-1, 1)      
+                        f.seek(-1, 1)
 
-                
                 with open(file_path, 'a', encoding='utf-8') as f:
                     new_data_str = json.dumps(all_flights_data, indent=4, ensure_ascii=False)
                     f.write(",\n" + new_data_str[1:])
-            
+
         print(f"\nDone! Total records saved: {len(all_flights_data)}")
+    finally:
+        status = cycle.finish()
+        print(f"PostgreSQL scrape_run {cycle.run_id} status={status}")
 
 if __name__ == "__main__":
     asyncio.run(main())

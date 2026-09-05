@@ -1,4 +1,5 @@
-import { Search, ArrowUpDown, Download } from 'lucide-react'
+import { Search, ArrowUpDown } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import PageHeading from '../components/common/PageHeading'
 import CardShell from '../components/common/CardShell'
 import LoadingBlock from '../components/common/LoadingBlock'
@@ -25,6 +26,7 @@ function formatPrice(value) {
 }
 
 export default function DataExplorer() {
+  const [params] = useSearchParams()
   const {
     loading,
     error,
@@ -41,8 +43,13 @@ export default function DataExplorer() {
     sortDir,
     toggleSort,
     total,
+    page,
+    setPage,
+    pageCount,
+    from,
+    to,
     reload,
-  } = useDataExplorer()
+  } = useDataExplorer(params.get('q') || '')
 
   return (
     <div>
@@ -62,7 +69,13 @@ export default function DataExplorer() {
 
       <CardShell
         title="Quotes"
-        subtitle={`Showing ${filtered.length} of ${total} records`}
+        subtitle={
+          loading
+            ? 'Loading quotes…'
+            : error
+              ? 'Unable to load quotes'
+              : `Showing ${from}–${to} of ${total.toLocaleString('en-IN')} records`
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -201,14 +214,38 @@ export default function DataExplorer() {
                       </p>
 
                       <p className="mt-1 text-sm text-zinc-400">
-                        Quote data will appear here once the collection
-                        service is connected.
+                        No quotes matched this page or filter.
                       </p>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+        {!loading && !error && total > 0 && (
+          <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-sm dark:border-zinc-800">
+            <p className="text-zinc-500">
+              Page {page} of {pageCount}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={page >= pageCount}
+                onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </CardShell>

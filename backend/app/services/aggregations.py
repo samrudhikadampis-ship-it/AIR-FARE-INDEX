@@ -7,7 +7,7 @@ from app.constants import (
     AIRPORT_CITIES,
     BOOKING_WINDOW_DAYS,
     INDEX_BASELINE_FARE,
-    SCRAPER_SOURCE,
+    SCRAPE_SOURCE_SEEDS,
     WEEKDAY_NAMES,
 )
 from app.models.aggregations import (
@@ -240,7 +240,7 @@ def collection_summary(quotes: list[Quote]) -> CollectionSummary:
         quotes_total=len(quotes),
         routes=len(route_keys),
         last_collected_at=max(known).isoformat() if known else None,
-        source=SCRAPER_SOURCE,
+        source=", ".join(name for _code, name, _kind in SCRAPE_SOURCE_SEEDS),
     )
 
 

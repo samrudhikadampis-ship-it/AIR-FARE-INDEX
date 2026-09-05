@@ -48,6 +48,7 @@ export default function SectorHeatmap() {
     summary,
     loading,
     error,
+    reload,
   } = useSectorHeatmap()
 
   const airportList = Array.isArray(airports) ? airports : []
@@ -112,7 +113,7 @@ export default function SectorHeatmap() {
         {loading ? (
           <LoadingBlock height="h-64" />
         ) : error ? (
-          <ErrorBlock message="Unable to load heatmap sectors." />
+          <ErrorBlock message="Unable to load heatmap sectors." onRetry={reload} />
         ) : airportList.length === 0 ? (
           <p className="px-6 py-16 text-center text-sm text-zinc-500">No sector observations are available.</p>
         ) : (
