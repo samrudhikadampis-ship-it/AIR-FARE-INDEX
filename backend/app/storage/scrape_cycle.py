@@ -5,6 +5,7 @@ from datetime import date, datetime
 from typing import Any, Awaitable
 
 from app.constants import BOOKING_WINDOW_DAYS
+from app.db.config import require_database_url
 from app.storage.ingest import FareIngestor, IngestSearchResult
 
 logger = logging.getLogger("airfare.scrape")
@@ -26,7 +27,7 @@ class ScrapeCycle:
         self.source_code = source_code.strip().upper()
         self.collected_on = collected_on or datetime.now().date()
         self.target_windows = list(target_windows if target_windows is not None else BOOKING_WINDOW_DAYS)
-        self.ingestor = ingestor or FareIngestor()
+        self.ingestor = ingestor if ingestor is not None else _live_ingestor()
         self.run_id: int | None = None
         self.attempted = 0
         self.successes = 0
@@ -64,21 +65,18 @@ class ScrapeCycle:
 
         # Failed searches persist the request, never observations.
         to_ingest = records if ok else []
+        empty = ok and not to_ingest
+        if empty:
+            metadata["empty"] = True
 
         try:
             result = self._ingest(origin_iata, dest_iata, travel_date, to_ingest, metadata)
         except Exception as exc:
             logger.exception("Ingest failed for %s source=%s", label, self.source_code)
             self.failures.append(f"{label}: ingest error: {exc}")
-            if ok:
-                metadata = {**metadata, "ok": False, "error": str(exc)}
-                try:
-                    return self._ingest(origin_iata, dest_iata, travel_date, [], metadata)
-                except Exception:
-                    logger.exception("Could not persist failed-search row for %s", label)
             return None
 
-        if ok:
+        if ok and to_ingest:
             self.successes += 1
             logger.info(
                 "Ingested search %s source=%s observations=%s",
@@ -86,6 +84,9 @@ class ScrapeCycle:
                 self.source_code,
                 result.rows_upserted,
             )
+        elif empty:
+            self.failures.append(f"{label}: empty results")
+            logger.warning("Recorded empty search %s source=%s", label, self.source_code)
         else:
             self.failures.append(f"{label}: {error or 'search failed'}")
             logger.warning("Recorded failed search %s source=%s error=%s", label, self.source_code, error)
@@ -175,6 +176,15 @@ async def run_search_and_ingest(
         )
         return []
 
+    if not records:
+        logger.warning(
+            "Empty scrape %s->%s %s source=%s",
+            origin_iata,
+            dest_iata,
+            travel_date,
+            cycle.source_code,
+        )
+
     cycle.record_search(
         origin_iata,
         dest_iata,
@@ -184,3 +194,8 @@ async def run_search_and_ingest(
         request_metadata=request_metadata,
     )
     return records
+
+
+def _live_ingestor() -> FareIngestor:
+    require_database_url()
+    return FareIngestor()

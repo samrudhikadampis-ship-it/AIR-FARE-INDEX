@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from app.db.config import database_url_configured
+import pytest
+
+from app.db.config import database_url_configured, require_database_url
 from app.deps import get_quote_store
 from app.storage.json_store import JsonQuoteStore
 from app.storage.postgres_store import PostgresQuoteStore
@@ -16,3 +18,9 @@ def test_configured_database_url_uses_postgres_store(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://postgres:PASSWORD@localhost:5432/airfare_index")
     assert database_url_configured() is True
     assert isinstance(get_quote_store(), PostgresQuoteStore)
+
+
+def test_require_database_url_fails_when_unset(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(RuntimeError, match="DATABASE_URL is not set"):
+        require_database_url()

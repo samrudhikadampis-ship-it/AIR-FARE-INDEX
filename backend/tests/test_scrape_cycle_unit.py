@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import date
 from typing import Any
 
+import pytest
+
 from app.storage.ingest import IngestSearchResult
-from app.storage.scrape_cycle import SOURCE_CLEARTRIP, SOURCE_EASEMYTRIP, ScrapeCycle
+from app.storage.scrape_cycle import (
+    SOURCE_CLEARTRIP,
+    SOURCE_EASEMYTRIP,
+    ScrapeCycle,
+    run_search_and_ingest,
+)
 
 
 class FakeIngestor:
@@ -39,6 +47,12 @@ class FakeIngestor:
 
     def finish_run(self, scrape_run_id, status="success", error_text=None, finished_at=None) -> None:
         self.finished.append({"id": scrape_run_id, "status": status, "error_text": error_text})
+
+
+class RaisingIngestor(FakeIngestor):
+    def ingest_search(self, scrape_run_id, origin_iata, dest_iata, travel_date, records, **kwargs) -> IngestSearchResult:
+        super().ingest_search(scrape_run_id, origin_iata, dest_iata, travel_date, records, **kwargs)
+        raise RuntimeError("connection lost")
 
 
 def test_both_source_codes_are_passed_through():
@@ -92,3 +106,70 @@ def test_mixed_results_are_partial():
     assert cycle.finish() == "partial"
     assert fake.searches[1]["records"] == []
     assert fake.finished[0]["status"] == "partial"
+
+
+def test_ingest_error_does_not_discard_parsed_records():
+    fake = RaisingIngestor()
+    cycle = ScrapeCycle(SOURCE_CLEARTRIP, collected_on=date(2026, 9, 5), ingestor=fake)
+    cycle.start()
+    offered = [{"price": "1,000", "departure_time": "06:00", "plane_number": "6E-1"}]
+    result = cycle.record_search("DEL", "BLR", date(2026, 9, 12), offered, ok=True)
+    status = cycle.finish()
+
+    assert result is None
+    assert status == "failed"
+    assert len(fake.searches) == 1
+    assert fake.searches[0]["records"] == offered
+    assert "ingest error" in (fake.finished[0]["error_text"] or "")
+
+
+def test_empty_search_is_distinct_from_successful_search_with_fares():
+    fake = FakeIngestor()
+    cycle = ScrapeCycle(SOURCE_CLEARTRIP, collected_on=date(2026, 9, 5), ingestor=fake)
+    cycle.start()
+    cycle.record_search("DEL", "BLR", date(2026, 9, 12), [], ok=True)
+    status = cycle.finish()
+
+    assert status == "failed"
+    assert fake.searches[0]["records"] == []
+    assert fake.searches[0]["request_metadata"]["ok"] is True
+    assert fake.searches[0]["request_metadata"]["empty"] is True
+    assert "empty results" in (fake.finished[0]["error_text"] or "")
+
+
+def test_empty_search_with_fares_is_partial():
+    fake = FakeIngestor()
+    cycle = ScrapeCycle(SOURCE_EASEMYTRIP, collected_on=date(2026, 9, 5), ingestor=fake)
+    cycle.start()
+    cycle.record_search("DEL", "BLR", date(2026, 9, 12), [{"price": "2,000", "departure_time": "07:00"}], ok=True)
+    cycle.record_search("BOM", "DEL", date(2026, 9, 12), [], ok=True)
+    assert cycle.finish() == "partial"
+    assert fake.searches[1]["request_metadata"]["empty"] is True
+    assert "empty" not in (fake.searches[0]["request_metadata"] or {})
+
+
+def test_run_search_and_ingest_empty_result_is_not_a_fare_success():
+    async def empty_scrape():
+        return []
+
+    fake = FakeIngestor()
+    cycle = ScrapeCycle(SOURCE_CLEARTRIP, collected_on=date(2026, 9, 5), ingestor=fake)
+    cycle.start()
+    records = asyncio.run(
+        run_search_and_ingest(
+            cycle,
+            empty_scrape(),
+            origin_iata="DEL",
+            dest_iata="BLR",
+            travel_date=date(2026, 9, 12),
+        )
+    )
+    assert records == []
+    assert cycle.finish() == "failed"
+    assert fake.searches[0]["request_metadata"]["empty"] is True
+
+
+def test_missing_database_url_fails_for_scraper_execution(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(RuntimeError, match="DATABASE_URL is not set"):
+        ScrapeCycle(SOURCE_CLEARTRIP, collected_on=date(2026, 9, 5))
