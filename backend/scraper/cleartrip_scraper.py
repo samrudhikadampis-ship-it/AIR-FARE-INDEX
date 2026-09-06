@@ -88,10 +88,7 @@ async def scrape_single_url(browser, semaphore, from_code, to_code, date_str, de
             page = await context.new_page()
             await page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
-            try:
-                await page.wait_for_selector("text=₹", timeout=12000)
-            except Exception:
-                pass
+            await page.wait_for_selector("text=₹", timeout=12000)
 
             try:
                 await page.locator("svg:has(path[d='M18 6l-6 6m0 0l-6 6m6-6L6 6m6 6l6 6'])").first.click(timeout=3000)

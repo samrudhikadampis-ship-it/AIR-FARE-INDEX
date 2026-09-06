@@ -194,3 +194,27 @@ def test_mixed_search_results_mark_run_partial(session_factory, db_session):
     assert db_session.scalar(
         select(func.count()).select_from(FareObservation).where(FareObservation.scrape_run_id == run_id)
     ) == 1
+
+
+def test_empty_search_writes_search_not_observations(session_factory, db_session):
+    ingestor = FareIngestor(session_factory=session_factory)
+    cycle = ScrapeCycle(
+        SOURCE_CLEARTRIP,
+        collected_on=date(2026, 9, 5),
+        ingestor=ingestor,
+    )
+    run_id = cycle.start()
+    cycle.record_search("DEL", "BLR", date(2026, 9, 12), [], ok=True)
+    status = cycle.finish()
+
+    assert status == "failed"
+    run = db_session.get(ScrapeRun, run_id)
+    assert run is not None and run.status == "failed"
+    assert "empty results" in (run.error_text or "")
+    searches = db_session.scalars(select(Search).where(Search.scrape_run_id == run_id)).all()
+    assert len(searches) == 1
+    assert searches[0].request_metadata["ok"] is True
+    assert searches[0].request_metadata["empty"] is True
+    assert db_session.scalar(
+        select(func.count()).select_from(FareObservation).where(FareObservation.search_id == searches[0].id)
+    ) == 0
