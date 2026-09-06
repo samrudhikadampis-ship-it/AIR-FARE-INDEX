@@ -1,0 +1,3 @@
+# Generated scraper output
+backend/scraper/*_flights_data.json
+backend/fast_flights_data.json
