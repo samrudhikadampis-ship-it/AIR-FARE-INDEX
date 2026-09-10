@@ -1,5 +1,12 @@
 from fastapi import APIRouter, Depends
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+
+from app.main import app
+
 from app.deps import get_quotes
 from app.models.aggregations import (
     BookingWindowResponse,
